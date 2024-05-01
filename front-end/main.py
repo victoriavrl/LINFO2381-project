@@ -11,6 +11,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # Global variable to track conversion status
 conversion_successful = False
 
+
 @app.route("/", methods=["POST", "GET"])
 def home():
     global conversion_successful
@@ -29,7 +30,6 @@ def home():
 
         # If file is present and valid, save it temporarily and set the message
         if file:
-            message = "Archive Soumise"  # Set message to be displayed
 
             # Save the file temporarily
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
@@ -48,7 +48,12 @@ def home():
             # Delete the temporary file after conversion
             os.remove(file_path)
 
-    return render_template("index.html", message=message, conversion_successful=conversion_successful)
+    return render_template('index.html')
+
+
+@app.route("/history", methods=["POST", "GET"])
+def history():
+    return render_template('history.html')
 
 
 if __name__ == "__main__":
