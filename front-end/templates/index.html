@@ -1,65 +1,104 @@
-{%extends "base.html"%}
-{%block pageTitle%}
-Uploading files from a scan
-{%endblock%}
-{%block content%}
-{% if message %}
-    <p>{{ message }}</p>
-    {% endif %}
-    <form id="uploadForm" method="post" action="#" enctype="multipart/form-data">
-        <input type="file" name="file" id="fileInput">
-        <div id="fileInfo"></div>
-        <button type="submit" id="submitButton">Submit zip files</button>
-    </form>
-    <!-- Loading animation -->
-    <div id="loading" style="display: none;">
-        <img src="../static/loading.gif" alt="Loading..." />
+{% extends "base.html" %}
+{% block pageTitle %}
+<div class="container text-center mb-4">
+    <h1 class="display-5 font-weight-bold">Uploading files from a scan</h1>
+</div>
+{% endblock %}
+{% block content %}
+<style>
+
+    .btn-primary {
+        background-color: #007B7F;
+        border-color: #007B7F;
+
+    }
+    .btn-primary:hover {
+        background-color: #00565A;
+        border-color: #00565A;
+    }
+</style>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            {% if message %}
+            <div class="alert alert-info" role="alert">
+                {{ message }}
+            </div>
+            {% endif %}
+            <div class="card">
+                <div class="card-body">
+                    <form id="uploadForm" method="post" action="#" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="fileInput" class="btn btn-primary btn-block">Select Zip File:</label>
+                            <input type="file" class="form-control-file d-none" id="fileInput" name="file" onchange="updateFileName(this)">
+                            <span id="fileName" class="text-muted">No file chosen</span>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Submit</button>
+                    </form>
+                </div>
+            </div>
+            <div id="loading" style="display: none; text-align: center;">
+                <img src="../static/loading.gif" alt="Loading...">
+            </div>
+            <div id="conversionMessage" style="display: none; text-align: center;">
+                <p id="conversionSuccessMessage" style="color: green; display: none;">Conversion Successful</p>
+                <p id="conversionFailedMessage" style="color: red; display: none;">Conversion Failed</p>
+            </div>
+        </div>
     </div>
-    <!-- Display conversion message -->
-    <div id="conversionMessage" style="display: none;">
-        <p id="conversionSuccessMessage" style="color: green; display: none;">Conversion Successful</p>
-        <p id="conversionFailedMessage" style="color: red; display: none;">Conversion Failed</p>
-    </div>
-    <!-- Inline JavaScript -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const fileInput = document.getElementById('fileInput');
-            const fileInfo = document.getElementById('fileInfo');
-            const uploadForm = document.getElementById('uploadForm');
-            const conversionSuccessMessage = document.getElementById('conversionSuccessMessage');
-            const conversionFailedMessage = document.getElementById('conversionFailedMessage');
-            const conversionMessage = document.getElementById('conversionMessage');
+</div>
 
-            uploadForm.addEventListener('submit', (event) => {
-                event.preventDefault();
+<script>
+    function updateFileName(input) {
+        var fileNameDisplay = document.getElementById("fileName");
+        if (input.files.length > 0) {
+            fileNameDisplay.innerText = input.files[0].name;
+        } else {
+            fileNameDisplay.innerText = "No file chosen";
+        }
+    }
 
-                // Show loading animation
-                document.getElementById('loading').style.display = 'block';
-                showMessage(); // Call showMessage function
+    document.addEventListener('DOMContentLoaded', function () {
+        const fileInput = document.getElementById('fileInput');
+        const uploadForm = document.getElementById('uploadForm');
+        const conversionSuccessMessage = document.getElementById('conversionSuccessMessage');
+        const conversionFailedMessage = document.getElementById('conversionFailedMessage');
+        const loading = document.getElementById('loading');
+        const conversionMessage = document.getElementById('conversionMessage');
 
-                const file = fileInput.files[0];
-                const formData = new FormData();
-                formData.append('file', file);
+        uploadForm.addEventListener('submit', (event) => {
+            event.preventDefault();
 
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', '/convert', true);
+            // Show loading animation
+            loading.style.display = 'block';
 
-                xhr.onload = function () {
-                    // Hide loading animation
-                    document.getElementById('loading').style.display = 'none';
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
 
-                    if (xhr.status === 200) {
-                        // Display conversion success message
-                        conversionSuccessMessage.style.display = 'block';
-                    } else {
-                        // Display conversion failed message
-                        conversionFailedMessage.style.display = 'block';
-                    }
-                };
-
-                xhr.send(formData);
+            fetch('/convert', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                // Hide loading animation
+                loading.style.display = 'none';
+                if (response.ok) {
+                    // Display conversion success message
+                    conversionSuccessMessage.style.display = 'block';
+                } else {
+                    // Display conversion failed message
+                    conversionFailedMessage.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                // Hide loading animation
+                loading.style.display = 'none';
+                // Display conversion failed message
+                conversionFailedMessage.style.display = 'block';
             });
         });
+
     </script>
         
         <button type="button" onclick="window.location.href='/download_json'">Download json file</button>
@@ -71,4 +110,7 @@ Uploading files from a scan
             <button type="submit">Submit</button>
         </form>
         
-{%endblock%}
+
+    });
+</script>
+{% endblock %}
