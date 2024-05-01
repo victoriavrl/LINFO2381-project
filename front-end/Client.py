@@ -13,70 +13,56 @@ import CouchDBClient
 client = CouchDBClient.CouchDBClient()
 
 # client.reset()   # If you want to clear the entire content of CouchDB
-
 if not 'results' in client.listDatabases():
     client.createDatabase('results')
 
 
-##
-## Goal: Create a patient, record a few temperatures, retrieve the
-## temperatures associated with the patient, and finally retrieve the
-## name of all the patients stored in the CouchDB databases.
-##
-
-## 1. Create one new patient (which corresponds to an EHR in the
-## framework of openEHR CDR) and associate it with a demographic
-## information (i.e., patient's name)
-
-patientID =4 # TODOOOOO patientId recovered from dicom
-patientID= str(patientID)
-patientName= 'Alex'
+Name= 'Alex'# TODOOOOO studyname recovered from flask
 with open ('unravel_mean.json', 'r') as f:
     unravel_mean = f.read()
 # TODO
 # BEGIN STRIP
 
 #create function to add pateient and results
-def addPatientResult(patientID, patientName, results):
+def addStudyResult(StudyName ,results):
     #with open (results, 'r') as f:
     #    results = f.read()
+    StudyDate = datetime.datetime.now().isoformat()
     ResultID = client.addDocument('results', {
-    'name' : patientName,
-    'patientID': patientID,
+    'name' : StudyName,
+    'date': StudyDate,
     'results': results
     
 
 })
-addPatientResult(patientID, patientName, unravel_mean)
+addStudyResult(Name, unravel_mean)
 
 
 
-## 3. Retrieve all the temperatures that have just been stored, sorted
-## by increasing time
 
 # TODO
 # BEGIN STRIP
 
 # Fast version (install a view that "groups" results
 # according to their patient ID)
-client.installView('results', 'resultsView', 'by_patient_id', '''
-function(doc) {
-    if (doc.patientID && doc.results) {
-    emit(doc.patientID, doc);
-    }
-}
-''')
-# Fast version (install a view that "groups" results
-# according to their patient name)
-client.installView('results', 'resultsView', 'by_patient_name', '''
+client.installView('results', 'resultsView', 'by_study_name', '''
 function(doc) {
     if (doc.name && doc.results) {
     emit(doc.name, doc);
     }
 }
 ''')
+# Fast version (install a view that "groups" results
+# according to their patient name)
+client.installView('results', 'resultsView', 'by_time', '''
+function(doc) {
+    if (doc.date && doc.results) {
+    emit(doc.date, doc);
+    }
+}
+''')
 
-compositions = client.executeView('results', 'resultsView', 'by_patient_id', '3')
+compositions = client.executeView('results', 'resultsView', 'by_time', '3')
 print(compositions)
 
 # Only keep the content of "value" to be compatible with the slow version
