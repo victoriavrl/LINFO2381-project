@@ -1,31 +1,34 @@
-from flask import Flask, redirect, url_for, render_template, request
+from flask import Flask, render_template, request
+from DICOMtoNIIconversion import conversion
+import time
 
 app = Flask(__name__)
 
 
-@app.route("/", methods=["POST", "GET"])
-def home():
-    message = None  # Initialize message variable
+@app.route("/", methods=["GET", "POST"])
+def index():
+    message = None
 
     if request.method == "POST":
-        # Check if the POST request has a file part
         if 'file' not in request.files:
-            return redirect(request.url)
+            return "No file part", 400
 
         file = request.files['file']
 
-        # If the user does not select a file, the browser submits an empty file without a filename
         if file.filename == '':
-            return redirect(request.url)
+            return "No selected file", 400
 
-        # If file is present and valid, you can process it here
-        # For example, save it to a specific location or do further processing
-        print(file.filename)
+        # Set message to be displayed
+        message = "Archive soumise"
 
-        message = "Archive Soumise"  # Set message to be displayed
+        # Perform conversion and yield progress
+        progress_generator = conversion(file)
 
-    return render_template("index.html", message=message)  # Pass message to template
+        # Update progress in real-time
+        for progress in progress_generator:
+            time.sleep(0.1)  # Adjust this to control the update rate of the progress bar
 
+    return render_template("index.html", message=message)
 
 if __name__ == "__main__":
     app.run(debug=True)
