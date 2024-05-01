@@ -7,11 +7,13 @@
 </head>
 <body>
     <h1>Home!</h1>
-    <form method="post"  action="#">
-        <input type="file" id="fileInput">
+    {% if message %}
+    <p>{{ message }}</p>
+    {% endif %}
+    <form method="post" action="#" enctype="multipart/form-data">
+        <input type="file" name="file" id="fileInput">
         <div id="fileInfo"></div>
-        
-
+        <button type="submit">Soumettre l'archive</button>
     </form>
     <!-- Display info from jsonfile -->
     <script>
