@@ -1,4 +1,45 @@
 {%extends "base.html"%}
 {%block pageTitle%}
-Get history
+History of Past Studies
+
+{%endblock%}
+
+{%block content%}
+<form action="/history" method="post">
+    <label for="searchStudyName">Search by Study Name:</label>
+    <input type="text" id="searchStudyName" name="searchStudyName" placeholder="Study Name">
+    <button type="submit">Submit</button>
+</form>
+<form action="/history" method="post">
+    <label for="searchStudyDate">Search by Study Date:</label>
+    <input type="date" id="searchStudyDate" name="searchStudyDate", placeholder="Study Date">
+    <button type="submit">Submit</button>
+</form>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Study Name</th>
+            <th>Study Date</th>
+            <th>Study Time</th>
+            <th>Results</th>
+        </tr>
+    </thead>
+
+<tbody>
+    {% for i in range(size) %}
+    <tr>
+        <td>{{names[i]}}</td>
+        <td>{{dates[i]}}</td>
+        <td>{{times[i]}}</td>
+        <td>
+            <button type="button" onclick="window.location.href='/download/{{results[i]}}'">Download json file</button>
+
+
+        </td>
+    </tr>
+    {% endfor %}
+
+
+</tbody>
+</table>
 {%endblock%}
