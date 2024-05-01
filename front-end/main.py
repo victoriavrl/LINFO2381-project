@@ -13,16 +13,17 @@ UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Global variable to track conversion status
-#TODO: PUT THE RIGHT FILE NAME
 conversion_successful = False
 @app.route("/download_json", methods=[ "GET"])
 def download_json():
+    #TODO: change unravel_mean.json with the name of the json file with the result (and it's path if necesary)
+    #   if it's not in a file but juste a variable with the value go see the code in the function download
     return send_file('unravel_mean.json', as_attachment=True,download_name='jsonResult.json')
 
 
-#TODO: PUT THE RIGHT FILE NAME
 @app.route("/download_study_zip", methods=[ "GET"])
 def download_study_zip():
+    # TODO: change 'session-03-a-client (1).zip' with the name of the zip (and it's path if necesary)
     return send_file('session-03-a-client (1).zip', as_attachment=True,download_name='study.zip')
 
 
@@ -62,6 +63,9 @@ def home():
 
             # Delete the temporary file after conversion
             os.remove(file_path)
+
+            #TODO: when we have the json result from the back-end add it to couchdb with:
+            #addStudyResult(name, the_json_data)
 
     return render_template('index.html')
 
