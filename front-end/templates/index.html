@@ -7,26 +7,68 @@
 </head>
 <body>
     <h1>Home!</h1>
-    <form method="post"  action="#">
-        <input type="file" id="fileInput">
+    {% if message %}
+    <p>{{ message }}</p>
+    {% endif %}
+    <form id="uploadForm" method="post" action="#" enctype="multipart/form-data">
+        <input type="file" name="file" id="fileInput">
         <div id="fileInfo"></div>
-        
-
+        <button type="submit" id="submitButton">Soumettre l'archive</button>
     </form>
-    <!-- Display info from jsonfile -->
+    <!-- Loading animation -->
+    <div id="loading" style="display: none;">
+        <img src="../static/loading.gif" alt="Loading..." />
+    </div>
+    <!-- Display conversion message -->
+    <div id="conversionMessage" style="display: none;">
+        <p id="conversionSuccessMessage" style="color: green; display: none;">Conversion Successful</p>
+        <p id="conversionFailedMessage" style="color: red; display: none;">Conversion Failed</p>
+    </div>
+    <!-- Inline JavaScript -->
     <script>
-        const fileInput = document.getElementById('fileInput');
-        const fileInfo = document.getElementById('fileInfo');
-        fileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const result = e.target.result;
-                fileInfo.textContent = result;
-            };
-            reader.readAsText(file);
+        function showMessage() {
+            // Show message when form is submitted
+            document.getElementById('message').innerText = "Archive Soumise";
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const fileInput = document.getElementById('fileInput');
+            const fileInfo = document.getElementById('fileInfo');
+            const uploadForm = document.getElementById('uploadForm');
+            const conversionSuccessMessage = document.getElementById('conversionSuccessMessage');
+            const conversionFailedMessage = document.getElementById('conversionFailedMessage');
+            const conversionMessage = document.getElementById('conversionMessage');
+
+            uploadForm.addEventListener('submit', (event) => {
+                event.preventDefault();
+
+                // Show loading animation
+                document.getElementById('loading').style.display = 'block';
+                showMessage(); // Call showMessage function
+
+                const file = fileInput.files[0];
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '/convert', true);
+
+                xhr.onload = function () {
+                    // Hide loading animation
+                    document.getElementById('loading').style.display = 'none';
+
+                    if (xhr.status === 200) {
+                        // Display conversion success message
+                        conversionSuccessMessage.style.display = 'block';
+                    } else {
+                        // Display conversion failed message
+                        conversionFailedMessage.style.display = 'block';
+                    }
+                };
+
+                xhr.send(formData);
+            });
         });
     </script>
-
 </body>
 </html>
