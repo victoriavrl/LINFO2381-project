@@ -7,6 +7,26 @@
 </head>
 <body>
     <h1>Home!</h1>
-    <p>para</p>
+    <form method="post"  action="#">
+        <input type="file" id="fileInput">
+        <div id="fileInfo"></div>
+        
+
+    </form>
+    <!-- Display info from jsonfile -->
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const result = e.target.result;
+                fileInfo.textContent = result;
+            };
+            reader.readAsText(file);
+        });
+    </script>
+
 </body>
 </html>
