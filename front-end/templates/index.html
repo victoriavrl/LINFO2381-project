@@ -61,4 +61,14 @@ Uploading files from a scan
             });
         });
     </script>
+        
+        <button type="button" onclick="window.location.href='/download_json'">Download json file</button>
+        
+        <button type="button" onclick="window.location.href='/download_study_zip'">Download Study Folder</button>
+        <form action="" method="post">
+            <label for="studyName">Enter Study Name:</label>
+            <input type="text" id="studyName" name="studyName" placeholder="Enter Study Name">
+            <button type="submit">Submit</button>
+        </form>
+        
 {%endblock%}
