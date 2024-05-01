@@ -2,7 +2,11 @@ from flask import Flask, redirect, url_for, render_template, request, send_file
 from DICOMtoNIIconversion import conversion
 import os
 import Client as client
+import json
 app = Flask(__name__)
+
+# Initialize the client and Couch DB
+client.client_init()
 
 # Define a folder to store the uploaded files temporarily
 UPLOAD_FOLDER = 'uploads'
@@ -14,6 +18,8 @@ conversion_successful = False
 @app.route("/download_json", methods=[ "GET"])
 def download_json():
     return send_file('unravel_mean.json', as_attachment=True,download_name='jsonResult.json')
+
+
 #TODO: PUT THE RIGHT FILE NAME
 @app.route("/download_study_zip", methods=[ "GET"])
 def download_study_zip():
@@ -62,7 +68,46 @@ def home():
 
 @app.route("/history", methods=["POST", "GET"])
 def history():
-    return render_template('history.html')
+    
+    dates=[]
+    names=[]
+    results=[]
+    times=[]
+    size=0
+
+    if request.method == "POST":
+        # Get the study name from the form
+        study_name = request.form.get('searchStudyName')
+
+        # Get the results from the form
+        time = request.form.get('searchStudyDate')
+
+        # Add the study name and results to the database
+        if time:
+            composition=client.searchByDate( time)
+        if study_name:
+            composition=client.searchByName(study_name)
+        #process the composition to get date time and result
+        else:
+            composition=[]
+        for i in range(len(composition)):
+            dates.append(composition[i]['date'])
+            names.append(composition[i]['name'])
+            results.append(composition[i]['results'])
+            times.append(composition[i]['time'])
+        size=len(dates)
+
+    return render_template('history.html',dates=dates,names=names,results=results,size=size,times=times)
+
+@app.route("/download/<jsone>", methods=["POST", "GET"])
+def download(jsone):
+    #make json file from text argument
+    json_string=json.dumps(jsone)
+    with open('jsonResult.json', 'w') as json_file:
+        json_file.write(json_string)
+
+    return send_file('jsonResult.json', as_attachment=True,download_name='jsonResult.json')
+
 
 
 if __name__ == "__main__":

@@ -9,14 +9,50 @@ import random
 ##
 
 import CouchDBClient
+def addStudyResult(StudyName ,results):
+    #with open (results, 'r') as f:
+    #    results = f.read()
+    StudyDate = datetime.datetime.now().date().isoformat()
+    StudyTime = datetime.datetime.now().time().isoformat()[:5]
+    ResultID = client.addDocument('results', {
+    'name' : StudyName,
+    'date': StudyDate,
+    'results': results,
+    'time': StudyTime
+    
+    
 
-client = CouchDBClient.CouchDBClient()
+})
+client=None
+def client_init():
+    global client
+    client= CouchDBClient.CouchDBClient()
 
-# client.reset()   # If you want to clear the entire content of CouchDB
-if not 'results' in client.listDatabases():
-    client.createDatabase('results')
+    #client.reset()   # If you want to clear the entire content of CouchDB
+    if not 'results' in client.listDatabases():
+        client.createDatabase('results')
+    # Fast version (install a view that "groups" results
+    # according to their patient ID)
+    client.installView('results', 'resultsView', 'by_study_name', '''
+    function(doc) {
+        if (doc.name && doc.results) {
+        emit(doc.name, doc);
+        }
+    }
+    ''')
+    # Fast version (install a view that "groups" results
+    # according to their patient name)
+    client.installView('results', 'resultsView', 'by_time', '''
+    function(doc) {
+        if (doc.date && doc.results) {
+        emit(doc.date, doc);
+        }
+    }
+    ''')
 
-
+client_init()
+print(3)
+print(client)
 Name= 'Alex'# TODOOOOO studyname recovered from flask
 with open ('unravel_mean.json', 'r') as f:
     unravel_mean = f.read()
@@ -24,21 +60,8 @@ with open ('unravel_mean.json', 'r') as f:
 # BEGIN STRIP
 
 #create function to add pateient and results
-def addStudyResult(StudyName ,results):
-    #with open (results, 'r') as f:
-    #    results = f.read()
-    StudyDate = datetime.datetime.now().isoformat()
-    ResultID = client.addDocument('results', {
-    'name' : StudyName,
-    'date': StudyDate,
-    'results': results
-    
 
-})
 addStudyResult(Name, unravel_mean)
-
-
-
 
 # TODO
 # BEGIN STRIP
@@ -61,6 +84,17 @@ function(doc) {
     }
 }
 ''')
+
+def searchByName(name):
+    compositions = client.executeView('results', 'resultsView', 'by_study_name', name)
+    compositions = list(map(lambda x: x['value'], compositions))
+    return compositions
+
+def searchByDate(date):
+    compositions = client.executeView('results', 'resultsView', 'by_time', date)
+    compositions = list(map(lambda x: x['value'], compositions))
+    
+    return compositions
 
 compositions = client.executeView('results', 'resultsView', 'by_time', '3')
 print(compositions)
