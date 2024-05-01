@@ -62,7 +62,7 @@ function(doc) {
 }
 ''')
 
-compositions = client.executeView('results', 'resultsView', 'by_patient_id', '3')
+compositions = client.executeView('results', 'resultsView', 'by_time', '3')
 print(compositions)
 
 # Only keep the content of "value" to be compatible with the slow version

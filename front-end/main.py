@@ -26,6 +26,7 @@ def home():
     message = None  # Initialize message variable
 
     if request.method == "POST":
+        name= request.form.get('studyName')
         # Check if the POST request has a file part
         if 'file' not in request.files:
             return redirect(request.url)
