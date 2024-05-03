@@ -32,9 +32,8 @@ History of Past Studies
         <td>{{dates[i]}}</td>
         <td>{{times[i]}}</td>
         <td>
+            <button type="button" onclick="window.location.href='/content/{{results[i]}}'">Show content json file</button>
             <button type="button" onclick="window.location.href='/download/{{results[i]}}'">Download json file</button>
-
-
         </td>
     </tr>
     {% endfor %}

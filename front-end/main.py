@@ -1,4 +1,4 @@
-from flask import Flask, redirect, url_for, render_template, request, send_file
+from flask import Flask, redirect, url_for, render_template, request, send_file, jsonify
 from DICOMtoNIIconversion import conversion
 import os
 import Client as client
@@ -111,6 +111,11 @@ def download(jsone):
         json_file.write(json_string)
 
     return send_file('jsonResult.json', as_attachment=True,download_name='jsonResult.json')
+
+@app.route("/content/<data>", methods=["POST", "GET"])
+def showjson(data):
+    json_string=json.dumps(json.loads(data), indent=4)
+    return render_template('content.html', data=str(json_string))
 
 
 

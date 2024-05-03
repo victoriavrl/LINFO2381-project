@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+#docker run --rm -t -i -p 5984:5984 -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=password couchdb:3.3.3
+
 import datetime
 import random
 
