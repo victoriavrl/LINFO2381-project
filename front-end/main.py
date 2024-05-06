@@ -26,17 +26,12 @@ def download_json():
     return send_file('unravel_mean.json', as_attachment=True,download_name='jsonResult.json')
 
 
+# TODO: PUT THE RIGHT FILE NAME
 @app.route("/download_study_zip", methods=[ "GET"])
 def download_study_zip():
     # TODO: change 'session-03-a-client (1).zip' with the name of the zip (and it's path if necesary)
     return send_file('session-03-a-client (1).zip', as_attachment=True,download_name='study.zip')
 
-
-
-# TODO: PUT THE RIGHT FILE NAME
-@app.route("/download_study_zip", methods=["GET"])
-def download_study_zip():
-    return send_file('session-03-a-client (1).zip', as_attachment=True, download_name='study.zip')
 
 
 
