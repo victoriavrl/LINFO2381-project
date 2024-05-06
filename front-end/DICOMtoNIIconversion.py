@@ -1,6 +1,5 @@
 import os
 
-
 def conversion(filename):
     if not os.path.exists('out'):
         os.makedirs('out')

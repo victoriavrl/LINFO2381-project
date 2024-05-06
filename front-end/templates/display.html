@@ -1,0 +1,27 @@
+<!-- HTML Template -->
+{% extends "base.html" %}
+{% block pageTitle %}
+    Nifti Image Details
+{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            {% for nifti in nifti_files %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h2 class="card-title">Image Details - {{ nifti.filename }}</h2>
+                    <div class="card-text">
+                        <p><strong>Image shape:</strong> {{ nifti.shape }}</p>
+                        <p><strong>Data type:</strong> {{ nifti.dtype }}</p>
+                        <p><strong>Voxel dimensions:</strong> {{ nifti.zooms }}</p>
+                        <p><strong>Affine transformation matrix:</strong></p>
+                        <pre>{{ nifti.affine }}</pre>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
