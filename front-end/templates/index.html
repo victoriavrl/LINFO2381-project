@@ -37,21 +37,20 @@ Uploading files from a scan
                         <div class="form-group">
                             <label for="actionSelect">Select Action:</label>
                             <select class="form-control" id="actionSelect">
+                                <option value="visualize">Show information about my file</option>
                                 <option value="DTI">DTI Analysis - Download Study Folder</option>
-                                <option value="visualize">Visualize files</option>
                             </select>
                         </div>
-                        <button type="button" class="btn btn-primary btn-block" onclick="performAction()">Perform Action</button>
+                        <button type="button" class="btn btn-primary btn-block" onclick="performAction();$('#loading').show();">Perform Action</button>
                     </form>
+                    <div id="loading" style="display:none;"><img src="static/loading.gif" alt="" />Loading!</div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div id="loading" style="display: none; text-align: center;">
-    <img src="../static/loading.gif" alt="Loading..." style="width: 50px; height: 50px;"> <!-- Adjusted size of loading GIF -->
-</div>
+
 <div id="conversionMessage" style="display: none; text-align: center;">
     <p id="conversionSuccessMessage" style="color: green; display: none;">Conversion Successful</p>
     <p id="conversionFailedMessage" style="color: red; display: none;">Conversion Failed</p>

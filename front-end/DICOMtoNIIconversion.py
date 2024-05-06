@@ -1,6 +1,7 @@
 import os
 import zipfile
 import shutil
+import platform
 
 
 def empty_directory(directory):
@@ -106,7 +107,7 @@ def list_subdirectories(directory):
 
 
 def convert_DICOM_to_NIfTI(root, doing_study):
-    dicom_root = "data/DICOM/"
+    dicom_root = "uploads/"
     unzip_root = "data/UNZIP/"
     niftii_root = "data/NIFTII/"
     patient_list = list_subdirectories(dicom_root)
@@ -144,7 +145,7 @@ def convert_DICOM_to_NIfTI(root, doing_study):
     print("empty")
 
     for patient in patient_list:  # patients directory 
-        if not os.path.exists(study_path + "/subjects/" + patient) and doing_study:
+        if doing_study and not os.path.exists(study_path + "/subjects/" + patient):
             os.makedirs(study_path + "/subjects/" + patient)
         if not os.path.exists(niftii_root + "/" + patient):
             os.makedirs(niftii_root + "/" + patient)
@@ -163,7 +164,7 @@ def convert_DICOM_to_NIfTI(root, doing_study):
         p = os.path.join(unzip_root + "/" + patient + "/export/home1/sdc_image_pool/images/", p)
         e = os.listdir(p)[0]
         e = os.path.join(p, e)
-        conversion(e, niftii_root + "/" + patient, patient)
+        conversion(e, niftii_root + "/" + patient)
 
     print("conversion")
 

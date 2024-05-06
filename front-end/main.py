@@ -1,5 +1,5 @@
 from flask import Flask, redirect, url_for, render_template, request, send_file, jsonify
-from DICOMtoNIIconversion import conversion
+from DICOMtoNIIconversion import convert_DICOM_to_NIfTI
 import os
 from io import BytesIO
 import nibabel as nib
@@ -19,7 +19,7 @@ UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 conversion_successful = False
-
+study_name = ""
 
 @app.route("/download_json", methods=["GET"])
 def download_json():
@@ -44,6 +44,7 @@ def ensure_uploads_directory():
 @app.route("/", methods=["POST", "GET"])
 def home():
     global conversion_successful
+    global study_name
     ensure_uploads_directory()
 
     if request.method == "POST":
@@ -55,21 +56,6 @@ def home():
             # Save the file temporarily
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(file_path)
-            # Call the conversion function with the file path
-            conversion(file_path)
-
-            # Check if conversion was successful
-            out_files = os.listdir('out')
-            if not out_files:
-                conversion_successful = False  # Conversion failed
-            else:
-                conversion_successful = True  # Conversion successful
-
-            # Delete the temporary file after conversion
-            os.remove(file_path)
-
-            # TODO: when we have the json result from the back-end add it to couchdb with:
-            # addStudyResult(name, the_json_data)
 
     return render_template('index.html')
 
@@ -125,34 +111,53 @@ def showjson(data):
 
 @app.route('/DTI_analysis', methods=['POST'])
 def perform_download_action():
-    data = request.json
-    # TODO
-    # return jsonify({'message': 'Download action performed successfully'})
-    return jsonify({'error': 'Invalid action'})
+    convert_DICOM_to_NIfTI("uploads", False)
+
+    # Check if conversion was successful
+    out_files = os.listdir('data/NIFTII')
+    print(out_files)
+
+    # TODO: when we have the json result from the back-end add it to couchdb with:
+    # addStudyResult(name, the_json_data)
+    return render_template('content.html', data=str(json_string))
 
 
 @app.route('/display_info')
 def display_nifti_images():
+    global study_name
+    out_files = os.listdir('data/NIFTII')
+    if len(out_files) == 0:
+        convert_DICOM_to_NIfTI("uploads", False)
+
     nifti_files = []
-    for file in os.listdir("out"):
-        if file.endswith('.nii.gz'):
-            nifti_file = os.path.join("out", file)
-            img = nib.load(nifti_file)
-            data = img.get_fdata()
-            header = img.header
-            affine = img.affine
-            shape = data.shape
-            dtype = data.dtype
-            filename = os.path.basename(nifti_file)
-            nifti_files.append({
-                'filename': filename,
-                'shape': shape,
-                'dtype': dtype,
-                'zooms': header.get_zooms(),
-                'affine': affine
-            })
+    for study in os.listdir("data/NIFTII"):
+        for file in os.listdir("data/NIFTII/"+study):
+            if file.endswith('.nii.gz'):
+                nifti_file = os.path.join("data/NIFTII/"+study, file)
+                img = nib.load(nifti_file)
+                data = img.get_fdata()
+                header = img.header
+                affine = img.affine
+                shape = data.shape
+                dtype = data.dtype
+                filename = os.path.basename(nifti_file)
+                nifti_info = {
+                    'filename': str(filename),
+                    'shape': str(shape),
+                    'dtype': str(dtype),
+                    'zooms': str(header.get_zooms()),
+                    'affine': affine.tolist()
+                }
+                nifti_files.append(nifti_info)
+                file_name = filename.split('.')[0]+".json"
+                with open(file_name, 'w') as json_file:
+                    json.dump(nifti_info, json_file, indent=4)
+                client.addStudyResult(study_name, file_name)
+                if os.path.exists(file_name):
+                    os.remove(file_name)
 
     return render_template('display.html', nifti_files=nifti_files)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
