@@ -1,14 +1,10 @@
 from flask import Flask, redirect, url_for, render_template, request, send_file, jsonify
 from DICOMtoNIIconversion import convert_DICOM_to_NIfTI
 import os
-from io import BytesIO
 import nibabel as nib
-import numpy as np
 import Client as client
 import json
-import requests
-from PIL import Image
-
+from DICOMwebClient import DICOMwebClient
 
 app = Flask(__name__)
 
@@ -21,9 +17,12 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 conversion_successful = False
 study_name = ""
 
+dicomClient = DICOMwebClient() #TODO : mettre un url specifique?
+
+
 @app.route("/download_json", methods=["GET"])
 def download_json():
-    # TODO: change unravel_mean.json with the name of the json file with the result (and it's path if necesary)
+    # TODO: change unravel_mean.json with the name of the json file with the result (and it's path if necessary)
     #   if it's not in a file but juste a variable with the value go see the code in the function download
     return send_file('unravel_mean.json', as_attachment=True, download_name='jsonResult.json')
 
@@ -108,7 +107,7 @@ def showjson(data):
     json_string = json.dumps(json.loads(data), indent=4)
     return render_template('content.html', data=str(json_string))
 
-
+#TODO : lier au mémoire de quentin ?
 @app.route('/DTI_analysis', methods=['POST'])
 def perform_download_action():
     convert_DICOM_to_NIfTI("uploads", False)
@@ -119,7 +118,7 @@ def perform_download_action():
 
     # TODO: when we have the json result from the back-end add it to couchdb with:
     # addStudyResult(name, the_json_data)
-    return render_template('content.html', data=str(json_string))
+    return render_template('content.html', data=str("DTI analysis completed successfully!"))
 
 
 @app.route('/display_info')
@@ -131,9 +130,9 @@ def display_nifti_images():
 
     nifti_files = []
     for study in os.listdir("data/NIFTII"):
-        for file in os.listdir("data/NIFTII/"+study):
+        for file in os.listdir("data/NIFTII/" + study):
             if file.endswith('.nii.gz'):
-                nifti_file = os.path.join("data/NIFTII/"+study, file)
+                nifti_file = os.path.join("data/NIFTII/" + study, file)
                 img = nib.load(nifti_file)
                 data = img.get_fdata()
                 header = img.header
@@ -149,15 +148,29 @@ def display_nifti_images():
                     'affine': affine.tolist()
                 }
                 nifti_files.append(nifti_info)
-                file_name = filename.split('.')[0]+".json"
+                file_name = filename.split('.')[0] + ".json"
                 with open(file_name, 'w') as json_file:
                     json.dump(nifti_info, json_file, indent=4)
-                client.addStudyResult(study_name, file_name)
+                client.addStudyResult(study_name, file_name) #TODO : est ce que c'est bien comme ça qu'on ajoute le résultat à la base de donnée ?
                 if os.path.exists(file_name):
                     os.remove(file_name)
 
     return render_template('display.html', nifti_files=nifti_files)
 
+
+@app.route('/DICOMweb', methods=['GET', 'POST'])
+def getDICOMfromWeb():
+    if request.method == 'POST':
+        # Get the study name and patient name from the form
+        study_name = request.form.get('studyName')
+        patient_name = request.form.get('patientName')
+
+        # Perform search with study name and patient name using DICOMwebClient
+        search_results = dicomClient.lookupStudies({'StudyDescription': study_name, 'PatientName': patient_name})
+
+        return render_template('search_results.html', results=search_results)
+    else:
+        return render_template('dicomweb_form.html')
 
 if __name__ == "__main__":
     app.run(debug=True)
