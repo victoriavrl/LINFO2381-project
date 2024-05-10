@@ -1,4 +1,3 @@
-<!-- HTML Template -->
 {% extends "base.html" %}
 {% block pageTitle %}
 Uploading files from a scan
@@ -26,6 +25,8 @@ Uploading files from a scan
                             <span id="fileName" class="text-muted">No file chosen</span>
                         </div>
                         <button type="submit" class="btn btn-primary btn-block">Submit</button>
+                        <p class="text-center">OR</p>
+                        <button type="button" class="btn btn-primary btn-block" onclick="window.location.href='/DICOMweb';">Search for DICOM files on Orthanc</button>
                     </form>
                 </div>
             </div>
