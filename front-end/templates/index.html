@@ -1,29 +1,11 @@
 {% extends "base.html" %}
 {% block pageTitle %}
-<div class="container text-center mb-4">
-    <h1 class="display-5 font-weight-bold">Uploading files from a scan</h1>
-</div>
+Uploading files from a scan
 {% endblock %}
 {% block content %}
-<style>
 
-    .btn-primary {
-        background-color: #007B7F;
-        border-color: #007B7F;
-        height: 50px; /* Set the height of all buttons */
-    }
-
-    .btn-primary:hover {
-        background-color: #00565A;
-        border-color: #00565A;
-    }
-
-    .form-control {
-        height: 30px;
-    }
-</style>
 <div class="container">
-    <div class="row justify-content-center">
+    <div class="row">
         <div class="col-md-6">
             {% if message %}
             <div class="alert alert-info" role="alert">
@@ -32,34 +14,44 @@
             {% endif %}
             <div class="card">
                 <div class="card-body">
-                    <form action="" method="post" class="mt-3" >
-                <div class="form-group">
-                    <label for="studyName">Enter Study Name:</label>
-                    <input type="text" class="form-control" id="studyName" name="studyName" placeholder="Enter Study Name">
-                </div>
-                <button type="submit" class="btn btn-primary btn-block">Submit</button>
-                </form>
-                    <div style="margin-top: 25px;"></div>
-                    <form id="uploadForm" method="post" action="#" enctype="multipart/form-data">
+                    <form action="" method="post" class="mt-3" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="studyName">Enter Study Name:</label>
+                            <input type="text" class="form-control" id="studyName" name="studyName" placeholder="Enter Study Name">
+                        </div>
                         <div class="form-group">
                             <label for="fileInput" class="btn btn-primary btn-block">Select Zip File:</label>
                             <input type="file" class="form-control-file d-none" id="fileInput" name="file" onchange="updateFileName(this)">
                             <span id="fileName" class="text-muted">No file chosen</span>
                         </div>
                         <button type="submit" class="btn btn-primary btn-block">Submit</button>
+                        <p class="text-center">OR</p>
+                        <button type="button" class="btn btn-primary btn-block" onclick="window.location.href='/DICOMweb';">Search for DICOM files on Orthanc</button>
                     </form>
-                    <div style="margin-top: 25px;"></div>
-                <button type="button" class="btn btn-primary btn-block mt-3" onclick="window.location.href='/download_study_zip'">Download Study Folder</button>
-
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <form id="actionForm" class="mt-3">
+                        <div class="form-group">
+                            <label for="actionSelect">Select Action:</label>
+                            <select class="form-control" id="actionSelect">
+                                <option value="visualize">Show information about my file</option>
+                                <option value="DTI">DTI Analysis - Download Study Folder</option>
+                            </select>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-block" onclick="performAction();$('#loading').show();">Perform Action</button>
+                    </form>
+                    <div id="loading" style="display:none;"><img src="static/loading.gif" alt="" />Loading!</div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div id="loading" style="display: none; text-align: center;">
-    <img src="../static/loading.gif" alt="Loading..." style="width: 50px; height: 50px;"> <!-- Adjusted size of loading GIF -->
-</div>
+
 <div id="conversionMessage" style="display: none; text-align: center;">
     <p id="conversionSuccessMessage" style="color: green; display: none;">Conversion Successful</p>
     <p id="conversionFailedMessage" style="color: red; display: none;">Conversion Failed</p>
@@ -75,46 +67,40 @@
         }
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
-        const fileInput = document.getElementById('fileInput');
-        const uploadForm = document.getElementById('uploadForm');
-        const conversionSuccessMessage = document.getElementById('conversionSuccessMessage');
-        const conversionFailedMessage = document.getElementById('conversionFailedMessage');
-        const loading = document.getElementById('loading');
-        const conversionMessage = document.getElementById('conversionMessage');
+    function performAction() {
+        var actionSelect = document.getElementById("actionSelect");
+        var selectedAction = actionSelect.value;
 
-        uploadForm.addEventListener('submit', (event) => {
-            event.preventDefault();
-
-            // Show loading animation
-            loading.style.display = 'block';
-
-            const file = fileInput.files[0];
-            const formData = new FormData();
-            formData.append('file', file);
-
-            fetch('/convert', {
-                method: 'POST',
-                body: formData
-            })
-                .then(response => {
-                    // Hide loading animation
-                    loading.style.display = 'none';
-                    if (response.ok) {
-                        // Display conversion success message
-                        conversionSuccessMessage.style.display = 'block';
-                    } else {
-                        // Display conversion failed message
-                        conversionFailedMessage.style.display = 'block';
-                    }
+        switch (selectedAction) {
+            case "DTI":
+                fetch('/DTI_analysis', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ action: 'DTI' })
                 })
-                .catch(error => {
-                    // Hide loading animation
-                    loading.style.display = 'none';
-                    // Display conversion failed message
-                    conversionFailedMessage.style.display = 'block';
-                });
-        });
-    });
+                    .then(response => {
+                        if (response.ok) {
+                            // If the action was successful, redirect the user to the download route
+                            window.location.href = '/download_study_zip';
+                        } else {
+                            // Handle error cases
+                            console.error('Error performing download action');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+                break;
+            case "visualize":
+                // Redirect to the display_info route
+                window.location.href = '/display_info';
+                break;
+            default:
+                console.error('Invalid action selected');
+        }
+
+    }
 </script>
 {% endblock %}

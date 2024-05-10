@@ -4,6 +4,7 @@ import shutil
 import platform
 import pydicom
 
+
 def is_dicom_file(file_path):
     try:
         with pydicom.dcmread(file_path):
@@ -173,7 +174,7 @@ def convert_DICOM_to_NIfTI(root, doing_study):
                 file_path = os.path.join(root, file)
                 if is_dicom_file(file_path):
                         conversion(root, niftii_root + "/" + patient, patient)
-      
+     
 
     print("conversion")
 

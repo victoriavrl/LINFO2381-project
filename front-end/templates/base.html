@@ -10,17 +10,39 @@
     </style>
     <meta charset="UTF-8">
     <title>LINFO2381 - Project</title>
-
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
 </head>
 <body>
     <style>
-        .navbar {
-            margin-bottom: 20px;
-        }
-        .bg-teal {
-            background-color: teal !important; /* Set background color to teal */
-        }
-    </style>
+    .navbar {
+        margin-bottom: 20px;
+    }
+    .bg-teal {
+        background-color: teal !important;
+    }
+    .custom-select {
+    height: 50px;
+    }
+    .btn-custom {
+        background-color: #8A2BE2; /* Set custom button color */
+        border-color: #8A2BE2;
+    }
+    .btn-custom:hover {
+        background-color: #7B68EE; /* Set custom button hover color */
+        border-color: #7B68EE;
+    }
+    .btn-primary {
+        background-color: #007B7F;
+        border-color: #007B7F;
+    }
+    .btn-primary:hover {
+        background-color: #00565A;
+        border-color: #00565A;
+    }
+    .form-control {
+        height: 40px;
+    }
+</style>
     <nav class="navbar navbar-expand-lg navbar-dark bg-teal">
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -28,12 +50,13 @@
       <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
         <div class="navbar-nav">
           <a class="nav-item nav-link active" href="{{ url_for('home') }}">Home</a>
-          <a class="nav-item nav-link" href="{{ url_for('home') }}">Upload files</a> <!-- TODO -->
           <a class="nav-item nav-link" href="{{ url_for('history') }}">History</a>
         </div>
       </div>
     </nav>
-    <h1>{% block pageTitle %}{% endblock %}</h1>
+    <div class="container text-center mb-4">
+        <h1 class="display-5 font-weight-bold">{% block pageTitle %}{% endblock %}</h1>
+    </div>
     {% block content %}{% endblock %}
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>

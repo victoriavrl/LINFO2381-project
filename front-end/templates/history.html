@@ -1,44 +1,52 @@
-{%extends "base.html"%}
-{%block pageTitle%}
-History of Past Studies
+{% extends "base.html" %}
+{% block pageTitle %}
+History of past studies
+{% endblock %}
 
-{%endblock%}
-
-{%block content%}
-<form action="/history" method="post">
-    <label for="searchStudyName">Search by Study Name:</label>
-    <input type="text" id="searchStudyName" name="searchStudyName" placeholder="Study Name">
-    <button type="submit">Submit</button>
-</form>
-<form action="/history" method="post">
-    <label for="searchStudyDate">Search by Study Date:</label>
-    <input type="date" id="searchStudyDate" name="searchStudyDate", placeholder="Study Date">
-    <button type="submit">Submit</button>
-</form>
-<table class="table">
-    <thead>
-        <tr>
-            <th>Study Name</th>
-            <th>Study Date</th>
-            <th>Study Time</th>
-            <th>Results</th>
-        </tr>
-    </thead>
-
-<tbody>
-    {% for i in range(size) %}
-    <tr>
-        <td>{{names[i]}}</td>
-        <td>{{dates[i]}}</td>
-        <td>{{times[i]}}</td>
-        <td>
-            <button type="button" onclick="window.location.href='/content/{{results[i]}}'">Show content json file</button>
-            <button type="button" onclick="window.location.href='/download/{{results[i]}}'">Download json file</button>
-        </td>
-    </tr>
-    {% endfor %}
-
-
-</tbody>
-</table>
-{%endblock%}
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <form action="/history" method="post" class="mb-4">
+                <div class="input-group">
+                    <input type="text" id="searchStudyName" name="searchStudyName" class="form-control" placeholder="Search by Study Name">
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                </div>
+            </form>
+            <form action="/history" method="post" class="mb-4">
+                <div class="input-group">
+                    <input type="date" id="searchStudyDate" name="searchStudyDate" class="form-control" placeholder="Search by Study Date">
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                </div>
+            </form>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Study Name</th>
+                        <th>Study Date</th>
+                        <th>Study Time</th>
+                        <th>Results</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in range(size) %}
+                    <tr>
+                        <td>{{names[i]}}</td>
+                        <td>{{dates[i]}}</td>
+                        <td>{{times[i]}}</td>
+                        <td>
+                            <button type="button" class="btn btn-primary" onclick="window.location.href='/content/{{results[i]}}'">Show content json file</button>
+                            <button type="button" class="btn btn-primary" onclick="window.location.href='/download/{{results[i]}}'">Download json file</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
