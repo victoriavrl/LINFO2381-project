@@ -2,7 +2,16 @@ import os
 import zipfile
 import shutil
 import platform
+import pydicom
 
+
+def is_dicom_file(file_path):
+    try:
+        with pydicom.dcmread(file_path):
+            pass
+        return True
+    except pydicom.errors.InvalidDicomError:
+        return False
 
 def empty_directory(directory):
     try:
@@ -160,11 +169,12 @@ def convert_DICOM_to_NIfTI(root, doing_study):
     print("unziping")
 
     for patient in patient_list:  # conversion
-        p = os.listdir(unzip_root + "/" + patient + "/export/home1/sdc_image_pool/images/")[0]
-        p = os.path.join(unzip_root + "/" + patient + "/export/home1/sdc_image_pool/images/", p)
-        e = os.listdir(p)[0]
-        e = os.path.join(p, e)
-        conversion(e, niftii_root + "/" + patient)
+        for root, dirs, files in os.walk(unzip_root + "/" + patient):
+            for file in files:
+                file_path = os.path.join(root, file)
+                if is_dicom_file(file_path):
+                        conversion(root, niftii_root + "/" + patient, patient)
+     
 
     print("conversion")
 
