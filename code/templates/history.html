@@ -23,12 +23,13 @@ History of past studies
                     </div>
                 </div>
             </form>
-            <table class="table">
+            <table class="table"  >
                 <thead>
                     <tr>
                         <th>Study Name</th>
                         <th>Study Date</th>
                         <th>Study Time</th>
+                        <th>Performed Action</th>
                         <th>Results</th>
                     </tr>
                 </thead>
@@ -38,6 +39,7 @@ History of past studies
                         <td>{{names[i]}}</td>
                         <td>{{dates[i]}}</td>
                         <td>{{times[i]}}</td>
+                        <td>{{actions[i]}}</td>
                         <td>
                             <button type="button" class="btn btn-primary" onclick="window.location.href='/content/{{results[i]}}'">Show content json file</button>
                             <button type="button" class="btn btn-primary" onclick="window.location.href='/download/{{results[i]}}'">Download json file</button>

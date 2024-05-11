@@ -11,7 +11,7 @@ import random
 ##
 
 import CouchDBClient
-def addStudyResult(StudyName ,results):
+def addStudyResult(StudyName ,results, action):
     #with open (results, 'r') as f:
     #    results = f.read()
     StudyDate = datetime.datetime.now().date().isoformat()
@@ -20,8 +20,8 @@ def addStudyResult(StudyName ,results):
     'name' : StudyName,
     'date': StudyDate,
     'results': results,
-    'time': StudyTime
-    
+    'time': StudyTime,
+    'action': action
     
 
 })
@@ -59,8 +59,8 @@ Name= 'Alex'
 with open ('unravel_mean.json', 'r') as f:
     unravel_mean = f.read()
 
-#create function to add  results
-addStudyResult(Name, unravel_mean)
+# function to add  results
+addStudyResult(Name, unravel_mean, 'unravel')
 
 #function to add to database
 def addmultipleResults():
@@ -68,7 +68,7 @@ def addmultipleResults():
             unravel_mean = f.read()
     for i in range(10):
         Name= 'Alex'+str(i)
-        addStudyResult(Name, unravel_mean)
+        addStudyResult(Name, unravel_mean,'test')
 
 #TODO :To add artificial results to the database
 addmultipleResults()
