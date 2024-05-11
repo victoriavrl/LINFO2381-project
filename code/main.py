@@ -133,7 +133,7 @@ def perform_nifti_conversion():
 
 
 @app.route('/nifti_conversionDTI', methods=['POST'])
-def perform_nifti_conversion():
+def perform_nifti_conversionDTI():
     convert_DICOM_to_NIfTI("uploads", True)
     flash('Successful conversion', 'success')
     return render_template('index.html', file=name)
