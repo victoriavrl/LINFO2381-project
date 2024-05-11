@@ -3,58 +3,42 @@
 Uploading files from a scan
 {% endblock %}
 {% block content %}
-
 <div class="container">
     <div class="row">
         <div class="col-md-6">
-            {% if message %}
-            <div class="alert alert-info" role="alert">
-                {{ message }}
-            </div>
-            {% endif %}
-            <div class="card">
-                <div class="card-body">
-                    <form action="" method="post" class="mt-3" enctype="multipart/form-data">
-                        <div class="form-group">
-                            <label for="studyName">Enter Study Name:</label>
-                            <input type="text" class="form-control" id="studyName" name="studyName" placeholder="Enter Study Name">
-                        </div>
-                        <div class="form-group">
-                            <label for="fileInput" class="btn btn-primary btn-block">Select Zip File:</label>
-                            <input type="file" class="form-control-file d-none" id="fileInput" name="file" onchange="updateFileName(this)">
-                            <span id="fileName" class="text-muted">No file chosen</span>
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-block">Submit</button>
-                        <p class="text-center">OR</p>
-                        <button type="button" class="btn btn-primary btn-block" onclick="window.location.href='/DICOMweb';">Search for DICOM files on Orthanc</button>
-                    </form>
+            <!-- Form to upload files -->
+            <form id="uploadForm" action="" method="post" class="mt-3" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="studyName">Enter Study Name:</label>
+                    <input type="text" class="form-control" id="studyName" name="studyName" placeholder="Enter Study Name">
                 </div>
-            </div>
+                <div class="form-group">
+                    <label for="fileInput" class="btn btn-primary btn-block">Select Zip File:</label>
+                    <input type="file" class="form-control-file d-none" id="fileInput" name="file" onchange="updateFileName(this)">
+                    <span id="fileName" class="text-muted">No file chosen</span>
+                </div>
+                <button type="button" class="btn btn-primary btn-block" onclick="submitForm()">Submit</button>
+                <p class="text-center">OR</p>
+                <button type="button" class="btn btn-primary btn-block" onclick="window.location.href='/DICOMweb';">Search for DICOM files on Orthanc</button>
+            </form>
         </div>
         <div class="col-md-6">
-            <div class="card">
-                <div class="card-body">
-                    <form id="actionForm" class="mt-3">
-                        <div class="form-group">
-                            <label for="actionSelect">Select Action:</label>
-                            <select class="form-control" id="actionSelect">
-                                <option value="visualize">Show information about my file</option>
-                                <option value="DTI">DTI Analysis - Download Study Folder</option>
-                            </select>
-                        </div>
-                        <button type="button" class="btn btn-primary btn-block" onclick="performAction();$('#loading').show();">Perform Action</button>
-                    </form>
-                    <div id="loading" style="display:none;"><img src="static/loading.gif" alt="" />Loading!</div>
+            <form id="actionForm" class="mt-3">
+                <div class="form-group">
+                    <label for="actionSelect">Select Action on file {{ file }} </label>
+
+                    <select class="form-control" id="actionSelect">
+                        <option value="visualize">Show information about my file</option>
+                        <option value="niftiConversionDTI">Convert DICOM files into Nifti files for DTI analysis</option>
+                        <option value="niftiConversion">Convert DICOM files into Nifti files</option>
+                        <option value="DTI">DTI Analysis - Download Study Folder</option>
+                    </select>
                 </div>
-            </div>
+                <button type="button" class="btn btn-primary btn-block" onclick="performAction();$('#loading').show();">Perform Action</button>
+            </form>
+            <div id="loading" style="display:none;"><img src="static/loading.gif" alt="" />Loading!</div>
         </div>
     </div>
-</div>
-
-
-<div id="conversionMessage" style="display: none; text-align: center;">
-    <p id="conversionSuccessMessage" style="color: green; display: none;">Conversion Successful</p>
-    <p id="conversionFailedMessage" style="color: red; display: none;">Conversion Failed</p>
 </div>
 
 <script>
@@ -62,6 +46,7 @@ Uploading files from a scan
         var fileNameDisplay = document.getElementById("fileName");
         if (input.files.length > 0) {
             fileNameDisplay.innerText = input.files[0].name;
+            document.getElementById("actionSelect").setAttribute("data-filename", input.files[0].name);
         } else {
             fileNameDisplay.innerText = "No file chosen";
         }
@@ -70,6 +55,7 @@ Uploading files from a scan
     function performAction() {
         var actionSelect = document.getElementById("actionSelect");
         var selectedAction = actionSelect.value;
+        var fileName = document.getElementById("actionForm").getAttribute("data-filename");
 
         switch (selectedAction) {
             case "DTI":
@@ -78,7 +64,7 @@ Uploading files from a scan
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ action: 'DTI' })
+                    body: JSON.stringify({ action: 'DTI', filename: fileName })
                 })
                     .then(response => {
                         if (response.ok) {
@@ -94,13 +80,22 @@ Uploading files from a scan
                     });
                 break;
             case "visualize":
-                // Redirect to the display_info route
                 window.location.href = '/display_info';
+                break;
+            case "niftiConversion":
+                window.location.href = '/nifti_conversion';
+                break;
+            case "niftiConversionDTI":
+                window.location.href = '/nifti_conversionDTI';
                 break;
             default:
                 console.error('Invalid action selected');
         }
-
     }
+
+    function submitForm() {
+        document.getElementById("uploadForm").submit();
+    }
+
 </script>
 {% endblock %}
