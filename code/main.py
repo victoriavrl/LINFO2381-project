@@ -1,4 +1,4 @@
-from flask import Flask, redirect, url_for, render_template, request, send_file, jsonify
+from flask import Flask, redirect, url_for, render_template, request, send_file, jsonify, flash
 from DICOMtoNIIconversion import convert_DICOM_to_NIfTI
 import os
 import nibabel as nib
@@ -16,10 +16,10 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 conversion_successful = False
 study_name = ""
+name = "No current file uploaded"
+dicomClient = DICOMwebClient()  # TODO : mettre un url specifique?
 
-dicomClient = DICOMwebClient() #TODO : mettre un url specifique?
-
-#ca sert a rien on pense cest vrai ?
+# ca sert a rien on pense cest vrai ? --> réponse de Vic : OUI, en effet
 """@app.route("/download_json", methods=["GET"])
 def download_json():
     # TODO: change unravel_mean.json with the name of the json file with the result (and it's path if necessary)
@@ -34,6 +34,7 @@ def download_study_zip():
     return send_file('session-03-a-client (1).zip', as_attachment=True, download_name='study.zip')
 """
 
+
 def ensure_uploads_directory():
     uploads_dir = 'uploads'
     if not os.path.exists(uploads_dir):
@@ -42,21 +43,20 @@ def ensure_uploads_directory():
 
 @app.route("/", methods=["POST", "GET"])
 def home():
-    global conversion_successful
+    global conversion_successful, name
     global study_name
     ensure_uploads_directory()
-
     if request.method == "POST":
         study_name = request.form.get('studyName')  # Get study name
         file = request.files['file']  # Get uploaded file
 
         # If file is present and valid, save it temporarily and set the message
         if file and study_name:
-            # Save the file temporarily
+            name = file.filename
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(file_path)
 
-    return render_template('index.html')
+    return render_template('index.html', file=name)
 
 
 @app.route("/history", methods=["POST", "GET"])
@@ -91,7 +91,8 @@ def history():
             actions.append(composition[i]['action'])
         size = len(dates)
 
-    return render_template('history.html', dates=dates, names=names, results=results, size=size, times=times, actions=actions)
+    return render_template('history.html', dates=dates, names=names, results=results, size=size, times=times,
+                           actions=actions)
 
 
 @app.route("/download/<jsone>", methods=["POST", "GET"])
@@ -109,7 +110,8 @@ def showjson(data):
     json_string = json.dumps(json.loads(data), indent=4)
     return render_template('content.html', data=str(json_string))
 
-#TODO : lier au mémoire de quentin ?
+
+# TODO : lier au mémoire de quentin ?
 @app.route('/DTI_analysis', methods=['POST'])
 def perform_download_action():
     convert_DICOM_to_NIfTI("uploads", False)
@@ -123,8 +125,22 @@ def perform_download_action():
     return render_template('content.html', data=str("DTI analysis completed successfully!"))
 
 
+@app.route('/nifti_conversion', methods=['POST'])
+def perform_nifti_conversion():
+    convert_DICOM_to_NIfTI("uploads", False)
+    flash('Successful conversion', 'success')
+    return render_template('index.html', file=name)
+
+
+@app.route('/nifti_conversionDTI', methods=['POST'])
+def perform_nifti_conversion():
+    convert_DICOM_to_NIfTI("uploads", True)
+    flash('Successful conversion', 'success')
+    return render_template('index.html', file=name)
+
+
 @app.route('/display_info')
-def display_nifti_images():
+def display_nifti_infos():
     global study_name
     out_files = os.listdir('data/NIFTII')
     if len(out_files) == 0:
@@ -153,7 +169,8 @@ def display_nifti_images():
                 file_name = filename.split('.')[0] + ".json"
                 with open(file_name, 'w') as json_file:
                     json.dump(nifti_info, json_file, indent=4)
-                client.addStudyResult(study_name, file_name, 'Display NIFTII image') #TODO : est ce que c'est bien comme ça qu'on ajoute le résultat à la base de donnée ?
+                client.addStudyResult(study_name, file_name,
+                                      'Display NIFTII information')
                 if os.path.exists(file_name):
                     os.remove(file_name)
 
@@ -173,6 +190,7 @@ def getDICOMfromWeb():
         return render_template('search_results.html', results=search_results)
     else:
         return render_template('dicomweb_form.html')
+
 
 if __name__ == "__main__":
     app.run(debug=True)

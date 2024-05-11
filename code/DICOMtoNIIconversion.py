@@ -70,7 +70,7 @@ def move_file(source, destination):
         print(f"Error occurred: {e}")
 
 
-def conversion(filename, out):  # TODO check le os.system
+def conversion(filename, out):
     os_name = platform.system()
     librairy = ''
     if os_name == "Windows":
@@ -173,7 +173,7 @@ def convert_DICOM_to_NIfTI(root, doing_study):
             for file in files:
                 file_path = os.path.join(root, file)
                 if is_dicom_file(file_path):
-                        conversion(root, niftii_root + "/" + patient, patient)
+                        conversion(root, niftii_root + "/" + patient)
      
 
     print("conversion")
