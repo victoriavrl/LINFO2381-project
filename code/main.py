@@ -20,21 +20,6 @@ study_name = ""
 
 dicomClient = DICOMwebClient() #TODO : mettre un url specifique?
 
-#ca sert a rien on pense cest vrai ?
-"""@app.route("/download_json", methods=["GET"])
-def download_json():
-    # TODO: change unravel_mean.json with the name of the json file with the result (and it's path if necessary)
-    #   if it's not in a file but juste a variable with the value go see the code in the function download
-    return send_file('unravel_mean.json', as_attachment=True, download_name='Result.json')
-
-
-# TODO: PUT THE RIGHT FILE NAME
-@app.route("/download_study_zip", methods=["GET"])
-def download_study_zip():
-    # TODO: change 'session-03-a-client (1).zip' with the name of the zip (and it's path if necesary)
-    return send_file('session-03-a-client (1).zip', as_attachment=True, download_name='study.zip')
-"""
-
 def ensure_uploads_directory():
     uploads_dir = 'uploads'
     if not os.path.exists(uploads_dir):
@@ -155,7 +140,7 @@ def display_nifti_images():
                 file_name = filename.split('.')[0] + ".json"
                 with open(file_name, 'w') as json_file:
                     json.dump(nifti_info, json_file, indent=4)
-                client.addStudyResult(study_name, file_name, 'Display NIFTII image') #TODO : est ce que c'est bien comme ça qu'on ajoute le résultat à la base de donnée ?
+                client.addStudyResult(study_name, file_name, 'Display NIFTII image')
                 if os.path.exists(file_name):
                     os.remove(file_name)
 
