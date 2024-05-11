@@ -17,8 +17,8 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 conversion_successful = False
 study_name = ""
-
-dicomClient = DICOMwebClient() #TODO : mettre un url specifique?
+name = "No current file uploaded"
+dicomClient = DICOMwebClient()  # TODO : mettre un url specifique?
 
 def ensure_uploads_directory():
     uploads_dir = 'uploads'
@@ -28,10 +28,9 @@ def ensure_uploads_directory():
 
 @app.route("/", methods=["POST", "GET"])
 def home():
-    global conversion_successful
+    global conversion_successful, name
     global study_name
     ensure_uploads_directory()
-
     if request.method == "POST":
         clear_uploads_directory()
         clear_uploads_directory('data/NIFTII')
@@ -41,11 +40,11 @@ def home():
 
         # If file is present and valid, save it temporarily and set the message
         if file and study_name:
-            # Save the file temporarily
+            name = file.filename
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(file_path)
 
-    return render_template('index.html')
+    return render_template('index.html', file=name)
 
 
 @app.route("/history", methods=["POST", "GET"])
@@ -80,7 +79,8 @@ def history():
             actions.append(composition[i]['action'])
         size = len(dates)
 
-    return render_template('history.html', dates=dates, names=names, results=results, size=size, times=times, actions=actions)
+    return render_template('history.html', dates=dates, names=names, results=results, size=size, times=times,
+                           actions=actions)
 
 
 @app.route("/download/<jsone>", methods=["POST", "GET"])
@@ -98,7 +98,8 @@ def showjson(data):
     json_string = json.dumps(json.loads(data), indent=4)
     return render_template('content.html', data=str(json_string))
 
-#TODO : lier au mémoire de quentin ?
+
+# TODO : lier au mémoire de quentin ?
 @app.route('/DTI_analysis', methods=['POST'])
 def perform_download_action():
     convert_DICOM_to_NIfTI("uploads", False)
@@ -112,8 +113,22 @@ def perform_download_action():
     return render_template('content.html', data=str("DTI analysis completed successfully!"))
 
 
+@app.route('/nifti_conversion', methods=['POST'])
+def perform_nifti_conversion():
+    convert_DICOM_to_NIfTI("uploads", False)
+    flash('Successful conversion', 'success')
+    return render_template('index.html', file=name)
+
+
+@app.route('/nifti_conversionDTI', methods=['POST'])
+def perform_nifti_conversionDTI():
+    convert_DICOM_to_NIfTI("uploads", True)
+    flash('Successful conversion', 'success')
+    return render_template('index.html', file=name)
+
+
 @app.route('/display_info')
-def display_nifti_images():
+def display_nifti_infos():
     global study_name
     out_files = os.listdir('data/NIFTII')
     if len(out_files) == 0:
@@ -141,7 +156,6 @@ def display_nifti_images():
                 nifti_files.append(nifti_info)
                 nifti_info_json = json.dumps(nifti_info)
                 client.addStudyResult(study_name, nifti_info_json, 'Display NIFTII image')
-
     return render_template('display.html', nifti_files=nifti_files)
 
 
@@ -183,8 +197,6 @@ def clear_uploads_directory(directory='uploads'):
         elif os.path.isdir(item_path):
             shutil.rmtree(item_path)
             print(f"Deleted directory: {item_path}")
-
-
 
 if __name__ == "__main__":
     app.run(debug=True)
