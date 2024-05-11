@@ -271,10 +271,6 @@ def getDICOMfromWeb():
         return render_template('dicomweb_form.html')
 
 
-@app.route('/download_dicom', methods=['POST'])
-def download_dicom():
-    if request.method == 'POST':
-        return render_template('index.html')
 
 
 studies_uids = {}
@@ -300,13 +296,15 @@ def search_studies():
 
 
 instances = {}
-
+study=''
 
 @app.route('/getSeries', methods=['POST'])
 def getSeries():
+    global study
     if request.method == 'POST':
         study_txt = request.form.get('Study')
         study_instance_uid = studies_uids[study_txt]
+        study=study_instance_uid
         search_results = lookup_series(study_instance_uid)
         results = []
         for series in search_results:
@@ -314,6 +312,29 @@ def getSeries():
             results.append(text)
             instances[text] = series['series-instance-uid']
         return render_template('dicomweb_form.html', series=results)
+
+@app.route('/download_dicom', methods=['POST'])
+def download_dicom():
+    if request.method == 'POST':
+        #downloadInstancesOfSeries(self, studyInstanceUid, seriesInstanceUid)
+        series_txt = request.form.get('Serie') 
+        series_instance_uid = instances[series_txt]
+        
+        d=dicomClient.downloadInstancesOfSeries(study, series_instance_uid) 
+        save_dicom_files(d, 'data/UNZIP')
+
+    
+        return render_template('index.html')
+
+def save_dicom_files(parts, directory):
+    for index, part in enumerate(parts):
+        #filepath directory/dicom_instance.dcm
+        file_path = directory+ '/dicom_instance' + str(index) + '.dcm'
+        print('filepath',file_path)
+        #if does not exist create the file
+        with open(file_path, 'wb') as file:
+            file.write(part)
+            file.close()
 
 
 @app.route('/show_dicom', methods=['GET', 'POST'])
@@ -332,7 +353,7 @@ def show_dicom():
             return Response("Internal Server Error", status=500)
     else:
         return render_template('dicomweb_form.html')
-
+ 
 
 if __name__ == "__main__":
     app.run(debug=True)
