@@ -173,7 +173,7 @@ def convert_DICOM_to_NIfTI(root, doing_study):
             for file in files:
                 file_path = os.path.join(root, file)
                 if is_dicom_file(file_path):
-                        conversion(root, niftii_root + "/" + patient, patient)
+                        conversion(root, niftii_root + "/" + patient)
      
 
     print("conversion")

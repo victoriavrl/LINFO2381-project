@@ -1,5 +1,5 @@
 from flask import Flask, redirect, url_for, render_template, request, send_file, jsonify
-from DICOMtoNIIconversion import convert_DICOM_to_NIfTI
+from DICOMtoNIIconversion import convert_DICOM_to_NIfTI, unzip_file, is_dicom_file
 import os
 import nibabel as nib
 import Client as client
@@ -49,12 +49,22 @@ def home():
     if request.method == "POST":
         study_name = request.form.get('studyName')  # Get study name
         file = request.files['file']  # Get uploaded file
-
+        #print(file)
         # If file is present and valid, save it temporarily and set the message
         if file and study_name:
             # Save the file temporarily
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(file_path)
+            if file.filename.endswith(".zip"):  #TODO : case à cocher si on veut ajotuer au server ? ou juste on ajoute au serveur?
+                print("entered")
+                unzip_file(file_path, '/out')
+                for files in os.listdir('out'):
+                    if is_dicom_file(files):
+                        print(files)
+                        dicomClient.uploadFromPath(files)  # adding the DICOM file to the Orthanc server
+            else :
+                dicomClient.uploadFromPath(file_path) # adding the DICOM file to the Orthanc server
+
 
     return render_template('index.html')
 
@@ -110,7 +120,7 @@ def showjson(data):
 #TODO : lier au mémoire de quentin ?
 @app.route('/DTI_analysis', methods=['POST'])
 def perform_download_action():
-    convert_DICOM_to_NIfTI("uploads", False)
+    convert_DICOM_to_NIfTI("uploads", True)
 
     # Check if conversion was successful
     out_files = os.listdir('data/NIFTII')
@@ -120,6 +130,7 @@ def perform_download_action():
     # addStudyResult(name, the_json_data)
     return render_template('content.html', data=str("DTI analysis completed successfully!"))
 
+# TODO : ajouter au menu déroulant la conversion en nifti et l'affichage des images DICOM
 
 @app.route('/display_info')
 def display_nifti_images():
@@ -164,13 +175,14 @@ def getDICOMfromWeb():
         # Get the study name and patient name from the form
         study_name = request.form.get('studyName')
         patient_name = request.form.get('patientName')
-
+        print("Study and patient :", study_name, patient_name)
         # Perform search with study name and patient name using DICOMwebClient
         search_results = dicomClient.lookupStudies({'StudyDescription': study_name, 'PatientName': patient_name})
-
+        print(search_results)
         return render_template('search_results.html', results=search_results)
     else:
         return render_template('dicomweb_form.html')
+
 
 if __name__ == "__main__":
     app.run(debug=True)
