@@ -125,14 +125,14 @@ def perform_download_action():
     return render_template('content.html', data=str("DTI analysis completed successfully!"))
 
 
-@app.route('/nifti_conversion', methods=['POST'])
+@app.route('/nifti_conversion', methods=['GET'])
 def perform_nifti_conversion():
     convert_DICOM_to_NIfTI("uploads", False)
     flash('Successful conversion', 'success')
     return render_template('index.html', file=name)
 
 
-@app.route('/nifti_conversionDTI', methods=['POST'])
+@app.route('/nifti_conversionDTI', methods=['GET'])
 def perform_nifti_conversionDTI():
     convert_DICOM_to_NIfTI("uploads", True)
     flash('Successful conversion', 'success')
