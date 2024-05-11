@@ -1,5 +1,5 @@
-from flask import Flask, redirect, url_for, render_template, request, send_file, jsonify, flash
-from DICOMtoNIIconversion import convert_DICOM_to_NIfTI
+from flask import Flask, redirect, url_for, render_template, request, send_file, jsonify, flash, Response
+from DICOMtoNIIconversion import convert_DICOM_to_NIfTI, unzip_file, is_dicom_file
 import os
 import nibabel as nib
 import Client as client
@@ -13,6 +13,7 @@ client.client_init()
 
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.secret_key = "secret key"
 
 conversion_successful = False
 study_name = ""
@@ -55,7 +56,23 @@ def home():
             name = file.filename
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(file_path)
-
+            if file.filename.endswith(
+                    ".zip"):
+                print(file.filename)
+                unzip_file(file_path, 'out')
+                for files in os.listdir('out'):
+                    for study in os.listdir('out/' + files):
+                        study_name_temp = os.path.join('out', files, study)
+                        if is_dicom_file(study_name_temp):
+                            dicomClient.uploadFromPath(study_name_temp)  # adding the DICOM file to the Orthanc server
+                flash('File uploaded successfully on the Orthanc server', 'success')
+            elif is_dicom_file(file_path):
+                try:
+                    dicomClient.uploadFromPath(file_path)  # adding the DICOM file to the Orthanc server
+                    flash('File uploaded successfully on the Orthanc server', 'success')
+                except Exception as e:
+                    flash('Error: File not uploaded on the Orthanc server', 'error')
+        #print(dicomClient.listInstances("1.2.250.1.38.2.1.14.1.32100.3783939",'2.16.840.1.114362.1.6.1.4.13909.8443549972.396737424.944.519'))
     return render_template('index.html', file=name)
 
 
@@ -127,16 +144,27 @@ def perform_download_action():
 
 @app.route('/nifti_conversion', methods=['GET'])
 def perform_nifti_conversion():
-    convert_DICOM_to_NIfTI("uploads", False)
-    flash('Successful conversion', 'success')
-    return render_template('index.html', file=name)
+    try:
+        convert_DICOM_to_NIfTI("uploads", False)
+        if len(os.listdir('data/NIFTII' + name)) == 0:
+            flash('Error during conversion. Please verify the content of your files.', 'error')
+        else:
+            flash('Successful conversion', "error")
+    except Exception as e:
+        flash('Error during conversion. Please verify the content of your files.', 'error')
+    return render_template('displayflash.html', file=name)
 
 
 @app.route('/nifti_conversionDTI', methods=['GET'])
 def perform_nifti_conversionDTI():
-    convert_DICOM_to_NIfTI("uploads", True)
-    flash('Successful conversion', 'success')
-    return render_template('index.html', file=name)
+    try:
+        if len(os.listdir('data/NIFTII' + name)) == 0:
+            flash('Error during conversion. Please verify the content of your files.', 'error')
+        else:
+            flash('Successful conversion')
+    except Exception as e:
+        flash('Error during conversion. Please verify the content of your files.', 'error')
+    return render_template('displayflash.html', file=name)
 
 
 @app.route('/display_info')
@@ -182,12 +210,35 @@ def getDICOMfromWeb():
     if request.method == 'POST':
         # Get the study name and patient name from the form
         study_name = request.form.get('studyName')
-        patient_name = request.form.get('patientName')
-
+        series_id = request.form.get('seriesID')
+        print("Study and patient :", study_name, series_id)
+        criteria = {}
+        if series_id:
+            criteria['seriesInstanceUid'] = series_id
+        if study_name:
+            criteria['StudyDescription'] = study_name
         # Perform search with study name and patient name using DICOMwebClient
-        search_results = dicomClient.lookupStudies({'StudyDescription': study_name, 'PatientName': patient_name})
-
+        search_results = dicomClient.lookupInstances(criteria,True) # listInstance fonctionne nickel, pq ici ça marche pas ? TOdo : envoyer à l'assistante?
+        with open('search_results.json', 'w') as json_file:
+            json.dump(search_results, json_file, indent=4)
         return render_template('search_results.html', results=search_results)
+    else:
+        return render_template('dicomweb_form.html')
+
+
+@app.route('/show_dicom', methods=['GET', 'POST'])
+def show_dicom():
+    if request.method == 'POST':
+        try:
+            # Get the study name and patient name from the form
+            study_id = request.form.get('studyName')
+            series_id = request.form.get('seriesID')
+            print("Study and patient :", study_name, series_id)
+            # Perform search with study name and patient name using DICOMwebClient
+            pngImage = dicomClient.getRenderedInstance(study_id, series_id,"000") #TODO : look for the correct SOP id
+        except Exception as e:
+            print("Error:", e)  # Print the error for debugging
+            return Response("Internal Server Error", status=500)
     else:
         return render_template('dicomweb_form.html')
 
