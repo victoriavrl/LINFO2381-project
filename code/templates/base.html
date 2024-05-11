@@ -49,8 +49,8 @@
       </button>
       <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
         <div class="navbar-nav">
-          <a class="nav-item nav-link active" href="{{ url_for('home') }}">Home</a>
-          <a class="nav-item nav-link" href="{{ url_for('history') }}">History</a>
+          <a class="nav-item nav-link {% if active_page == 'home' %}active{% endif %}" href="{{ url_for('home') }}">Home</a>
+          <a class="nav-item nav-link {% if active_page == 'history' %}active{% endif %}" href="{{ url_for('history') }}">History</a>
         </div>
       </div>
     </nav>
