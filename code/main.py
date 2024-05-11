@@ -236,6 +236,7 @@ def show_dicom():
             print("Study and patient :", study_name, series_id)
             # Perform search with study name and patient name using DICOMwebClient
             pngImage = dicomClient.getRenderedInstance(study_id, series_id,"000") #TODO : look for the correct SOP id
+            return render_template('show_dicom.html', pngFile=pngImage)
         except Exception as e:
             print("Error:", e)  # Print the error for debugging
             return Response("Internal Server Error", status=500)
