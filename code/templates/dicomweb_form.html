@@ -21,14 +21,13 @@ Search for DICOM files on Orthanc
                 </div>
                 <button type="submit" class="btn btn-primary">Search</button>
             </form>
-            <form action="/getSeries/" method="post" class="mt-3">
+            <form action="/getSeries" method="post" class="mt-3">
                 <!-- ajouter menu déroulant avec input recu du back-->
                 <div class="form-group">
                     <label for="Study">Select a Study:</label>
-                    <input type="text" list="userList" class="form-control" id="Study" name="Study" placeholder="Search for studies" required>
+                    <input type="text" list="studylist" class="form-control" id="Study" name="Study" placeholder="Search for studies" required>
                     <datalist id="studylist">
                         {% for contestant in studies %}
-                            <!-- add name-->
                             <option value="{{ contestant }}">
                         {% endfor %}
                     </datalist>
@@ -39,7 +38,7 @@ Search for DICOM files on Orthanc
                 <form action="/download_dicom" method="post" class="mt-3">
                 <div class="form-group">
                     <label for="Serie">Select a Serie:</label>
-                    <input type="text" list="userList" class="form-control" id="Serie" name="Serie" placeholder="Search for Serie" required>
+                    <input type="text" list="serielist" class="form-control" id="Serie" name="Serie" placeholder="Search for Serie" required>
                     <datalist id="serielist">
                         {% for contestant in series %}
                             <!-- add name-->

@@ -18,7 +18,7 @@ app.secret_key = "secret key"
 conversion_successful = False
 study_name = ""
 name = "No current file uploaded"
-dicomClient = DICOMwebClient()  # TODO : mettre un url specifique?
+dicomClient = DICOMwebClient('https://orthanc.uclouvain.be/demo/dicom-web')  # TODO : mettre un url specifique?
 
 
 # Copied and Adapted from Pratical Session 5 of DICOMweb
@@ -40,7 +40,7 @@ def lookup_studies(patient_id, patient_name, study_description):
             'study-instance-uid': get_qido_rs_tag(item, 0x0020, 0x000D),
         })
 
-    return json.dumps(answer)
+    return answer
 
 
 # Copied from Pratical Session 5 of DICOMweb
@@ -77,7 +77,7 @@ def lookup_series(study_instance_uid):
             'series-instance-uid': get_qido_rs_tag(item, 0x0020, 0x000E),
         })
 
-    return json.dumps(answer)
+    return answer
 
 
 def ensure_uploads_directory():
@@ -289,6 +289,7 @@ def search_studies():
         search_results = lookup_studies(patient_id, patient_name, study_description)
         # var text = study['patient-id'] + ' - ' + study['patient-name'] + ' - ' + study['study-description']
         results = []
+        print("search_results", search_results)
         for study in search_results:
             print(study)
             text = study['patient-id'] + ' - ' + study['patient-name'] + ' - ' + study['study-description']
@@ -312,7 +313,7 @@ def getSeries():
             text = series['modality'] + ' - ' + series['series-description']
             results.append(text)
             instances[text] = series['series-instance-uid']
-        return render_template('search_results.html', series=results)
+        return render_template('dicomweb_form.html', series=results)
 
 
 @app.route('/show_dicom', methods=['GET', 'POST'])
