@@ -1,4 +1,5 @@
-from flask import Flask, redirect, url_for, render_template, request, send_file, jsonify, flash
+import shutil
+from flask import Flask, redirect, url_for, render_template, request, send_file, jsonify
 from DICOMtoNIIconversion import convert_DICOM_to_NIfTI
 import os
 import nibabel as nib
@@ -19,22 +20,6 @@ study_name = ""
 name = "No current file uploaded"
 dicomClient = DICOMwebClient()  # TODO : mettre un url specifique?
 
-# ca sert a rien on pense cest vrai ? --> réponse de Vic : OUI, en effet
-"""@app.route("/download_json", methods=["GET"])
-def download_json():
-    # TODO: change unravel_mean.json with the name of the json file with the result (and it's path if necessary)
-    #   if it's not in a file but juste a variable with the value go see the code in the function download
-    return send_file('unravel_mean.json', as_attachment=True, download_name='Result.json')
-
-
-# TODO: PUT THE RIGHT FILE NAME
-@app.route("/download_study_zip", methods=["GET"])
-def download_study_zip():
-    # TODO: change 'session-03-a-client (1).zip' with the name of the zip (and it's path if necesary)
-    return send_file('session-03-a-client (1).zip', as_attachment=True, download_name='study.zip')
-"""
-
-
 def ensure_uploads_directory():
     uploads_dir = 'uploads'
     if not os.path.exists(uploads_dir):
@@ -47,6 +32,9 @@ def home():
     global study_name
     ensure_uploads_directory()
     if request.method == "POST":
+        clear_uploads_directory()
+        clear_uploads_directory('data/NIFTII')
+        clear_uploads_directory('data/UNZIP')
         study_name = request.form.get('studyName')  # Get study name
         file = request.files['file']  # Get uploaded file
 
@@ -166,14 +154,8 @@ def display_nifti_infos():
                     'affine': affine.tolist()
                 }
                 nifti_files.append(nifti_info)
-                file_name = filename.split('.')[0] + ".json"
-                with open(file_name, 'w') as json_file:
-                    json.dump(nifti_info, json_file, indent=4)
-                client.addStudyResult(study_name, file_name,
-                                      'Display NIFTII information')
-                if os.path.exists(file_name):
-                    os.remove(file_name)
-
+                nifti_info_json = json.dumps(nifti_info)
+                client.addStudyResult(study_name, nifti_info_json, 'Display NIFTII image')
     return render_template('display.html', nifti_files=nifti_files)
 
 
@@ -191,6 +173,30 @@ def getDICOMfromWeb():
     else:
         return render_template('dicomweb_form.html')
 
+def clear_uploads_directory(directory='uploads'):
+    """
+    Clears all files and subdirectories in the specified 'uploads' directory.
+
+    Args:
+    directory (str): The path to the directory that needs to be cleared.
+    """
+    # Check if the directory exists
+    if not os.path.exists(directory):
+        print(f"The directory {directory} does not exist.")
+        return
+
+    # Iterate over each item in the directory
+    for item_name in os.listdir(directory):
+        item_path = os.path.join(directory, item_name)
+        
+        # If it's a file, delete it
+        if os.path.isfile(item_path) or os.path.islink(item_path):
+            os.remove(item_path)
+            print(f"Deleted file: {item_path}")
+        # If it's a directory, delete the entire directory tree
+        elif os.path.isdir(item_path):
+            shutil.rmtree(item_path)
+            print(f"Deleted directory: {item_path}")
 
 if __name__ == "__main__":
     app.run(debug=True)
