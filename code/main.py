@@ -1,3 +1,4 @@
+import shutil
 from flask import Flask, redirect, url_for, render_template, request, send_file, jsonify
 from DICOMtoNIIconversion import convert_DICOM_to_NIfTI
 import os
@@ -47,6 +48,7 @@ def home():
     ensure_uploads_directory()
 
     if request.method == "POST":
+        #clear_uploads_directory()
         study_name = request.form.get('studyName')  # Get study name
         file = request.files['file']  # Get uploaded file
 
@@ -173,6 +175,33 @@ def getDICOMfromWeb():
         return render_template('search_results.html', results=search_results)
     else:
         return render_template('dicomweb_form.html')
+
+def clear_uploads_directory(directory='uploads'):
+    """
+    Clears all files and subdirectories in the specified 'uploads' directory.
+
+    Args:
+    directory (str): The path to the directory that needs to be cleared.
+    """
+    # Check if the directory exists
+    if not os.path.exists(directory):
+        print(f"The directory {directory} does not exist.")
+        return
+
+    # Iterate over each item in the directory
+    for item_name in os.listdir(directory):
+        item_path = os.path.join(directory, item_name)
+        
+        # If it's a file, delete it
+        if os.path.isfile(item_path) or os.path.islink(item_path):
+            os.remove(item_path)
+            print(f"Deleted file: {item_path}")
+        # If it's a directory, delete the entire directory tree
+        elif os.path.isdir(item_path):
+            shutil.rmtree(item_path)
+            print(f"Deleted directory: {item_path}")
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)
