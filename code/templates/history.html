@@ -34,6 +34,7 @@ History of past studies
                     </tr>
                 </thead>
                 <tbody>
+
                     {% for i in range(size) %}
                     <tr>
                         <td>{{names[i]}}</td>
@@ -41,7 +42,7 @@ History of past studies
                         <td>{{times[i]}}</td>
                         <td>{{actions[i]}}</td>
                         <td>
-                            <button type="button" class="btn btn-primary" onclick="window.location.href='/content/{{results[i]}}'">Show content json file</button>
+                            <button type="button" class="btn btn-primary" onclick="window.open('/content/{{results[i]}}', '_blank')">Show content json file</button>
                             <button type="button" class="btn btn-primary" onclick="window.location.href='/download/{{results[i]}}'">Download json file</button>
                         </td>
                     </tr>
