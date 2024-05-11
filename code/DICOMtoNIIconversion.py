@@ -5,13 +5,19 @@ import platform
 import pydicom
 
 
-def is_dicom_file(file_path):
-    try:
-        with pydicom.dcmread(file_path):
-            pass
-        return True
-    except pydicom.errors.InvalidDicomError:
-        return False
+def contains_dicom_files(directory):
+    print(directory)
+    for filename in os.listdir(directory):
+        filepath = os.path.join(directory, filename)
+        if os.path.isfile(filepath):
+            print(filepath)
+            try:
+                with pydicom.dcmread(filepath):
+                    return True
+            except pydicom.errors.InvalidDicomError:
+                pass
+    return False
+
 
 def empty_directory(directory):
     try:
@@ -116,10 +122,12 @@ def list_subdirectories(directory):
 
 
 def convert_DICOM_to_NIfTI(root, doing_study):
+    # doing_study = False
+    # root = "C:/Users/quent/OneDrive/Documents/LINFO2381-project/front-end/"
     dicom_root = "uploads/"
     unzip_root = "data/UNZIP/"
     niftii_root = "data/NIFTII/"
-    patient_list = list_subdirectories(dicom_root)
+    patient_list = "IRM_10.01.01_T2"#list_subdirectories(dicom_root)
     # study_path = create_directory(root + "/study_10")
     if doing_study:
         study_path = root + "/study_10/"
@@ -153,7 +161,7 @@ def convert_DICOM_to_NIfTI(root, doing_study):
 
     print("empty")
 
-    for patient in patient_list:  # patients directory 
+    for patient in patient_list:  # patients directory
         if doing_study and not os.path.exists(study_path + "/subjects/" + patient):
             os.makedirs(study_path + "/subjects/" + patient)
         if not os.path.exists(niftii_root + "/" + patient):
@@ -169,12 +177,11 @@ def convert_DICOM_to_NIfTI(root, doing_study):
     print("unziping")
 
     for patient in patient_list:  # conversion
-        for root, dirs, files in os.walk(unzip_root + "/" + patient):
-            for file in files:
-                file_path = os.path.join(root, file)
-                if is_dicom_file(file_path):
-                        conversion(root, niftii_root + "/" + patient) #un patient en plus en argument
-     
+        for root, dirs, files in os.walk(unzip_root + patient):
+            for direc in dirs:
+                file_path = os.path.join(root, direc)
+                if os.path.isdir(file_path) and contains_dicom_files(file_path):
+                    conversion(file_path, niftii_root + "/" + patient)
 
     print("conversion")
 

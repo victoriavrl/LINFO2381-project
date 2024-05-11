@@ -71,7 +71,7 @@ def addmultipleResults():
         addStudyResult(Name, unravel_mean,'test')
 
 #TODO :To add artificial results to the database
-addmultipleResults()
+#addmultipleResults()
 
 
 

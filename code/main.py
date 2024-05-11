@@ -142,7 +142,8 @@ def display_nifti_images():
                 file_name = filename.split('.')[0] + ".json"
                 with open(file_name, 'w') as json_file:
                     json.dump(nifti_info, json_file, indent=4)
-                client.addStudyResult(study_name, file_name, 'Display NIFTII image')
+                nifti_info_json = json.dumps(nifti_info)
+                client.addStudyResult(study_name, nifti_info_json, 'Display NIFTII image')
                 if os.path.exists(file_name):
                     os.remove(file_name)
 
