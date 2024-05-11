@@ -34,6 +34,8 @@ def home():
 
     if request.method == "POST":
         clear_uploads_directory()
+        clear_uploads_directory('data/NIFTII')
+        clear_uploads_directory('data/UNZIP')
         study_name = request.form.get('studyName')  # Get study name
         file = request.files['file']  # Get uploaded file
 
