@@ -76,7 +76,7 @@ def move_file(source, destination):
         print(f"Error occurred: {e}")
 
 
-def conversion(filename, out):  # TODO check le os.system
+def conversion(filename, out):
     os_name = platform.system()
     librairy = ''
     if os_name == "Windows":
@@ -123,7 +123,6 @@ def list_subdirectories(directory):
 
 def convert_DICOM_to_NIfTI(root, doing_study):
     # doing_study = False
-    # root = "C:/Users/quent/OneDrive/Documents/LINFO2381-project/front-end/"
     dicom_root = "uploads/"
     unzip_root = "data/UNZIP/"
     niftii_root = "data/NIFTII/"
