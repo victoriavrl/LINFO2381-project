@@ -33,7 +33,7 @@ def home():
     ensure_uploads_directory()
 
     if request.method == "POST":
-        #clear_uploads_directory()
+        clear_uploads_directory()
         study_name = request.form.get('studyName')  # Get study name
         file = request.files['file']  # Get uploaded file
 

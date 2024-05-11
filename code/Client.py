@@ -11,7 +11,7 @@ import random
 ##
 
 import CouchDBClient
-def addStudyResult(StudyName ,results, action):
+def addStudyResult(StudyName , results, action):
     #with open (results, 'r') as f:
     #    results = f.read()
     StudyDate = datetime.datetime.now().date().isoformat()
