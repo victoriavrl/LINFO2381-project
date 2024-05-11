@@ -20,20 +20,64 @@ study_name = ""
 name = "No current file uploaded"
 dicomClient = DICOMwebClient()  # TODO : mettre un url specifique?
 
-# ca sert a rien on pense cest vrai ? --> réponse de Vic : OUI, en effet
-"""@app.route("/download_json", methods=["GET"])
-def download_json():
-    # TODO: change unravel_mean.json with the name of the json file with the result (and it's path if necessary)
-    #   if it's not in a file but juste a variable with the value go see the code in the function download
-    return send_file('unravel_mean.json', as_attachment=True, download_name='Result.json')
+
+# Copied and Adapted from Pratical Session 5 of DICOMweb
+
+def lookup_studies(patient_id, patient_name, study_description):
+    answer = []
+
+    studies = dicomClient.lookupStudies({
+        '00100020': patient_id,
+        '00100010': patient_name,
+        '00081030': study_description,
+    })
+
+    for item in studies:
+        answer.append({
+            'patient-id': get_qido_rs_tag(item, 0x0010, 0x0020),
+            'patient-name': get_qido_rs_tag(item, 0x0010, 0x0010),
+            'study-description': get_qido_rs_tag(item, 0x0008, 0x1030),
+            'study-instance-uid': get_qido_rs_tag(item, 0x0020, 0x000D),
+        })
+
+    return json.dumps(answer)
 
 
-# TODO: PUT THE RIGHT FILE NAME
-@app.route("/download_study_zip", methods=["GET"])
-def download_study_zip():
-    # TODO: change 'session-03-a-client (1).zip' with the name of the zip (and it's path if necesary)
-    return send_file('session-03-a-client (1).zip', as_attachment=True, download_name='study.zip')
-"""
+# Copied from Pratical Session 5 of DICOMweb
+
+# This function extracts one tag of interest from a QIDO-RS response
+# formatted in JSON. The DICOM tag must be specified by providing the
+# value of its group and of its element. For instance, to extract the
+# modality of a QIDO-RS result, one would write:
+# "get_quido_rs_tag(json, 0x0008, 0x0060)"
+def get_qido_rs_tag(json, group, element):
+    tag = '%04X%04X' % (group, element)
+    if tag in json:
+        if json[tag]['vr'] == 'PN':
+            return json[tag]['Value'][0]['Alphabetic']
+        else:
+            return json[tag]['Value'][0]
+    else:
+        return ''
+
+
+# Copied and adapted from Pratical Session 5 of DICOMweb
+
+def lookup_series(study_instance_uid):
+    answer = []
+
+    series = dicomClient.lookupSeries({
+        '0020000D': study_instance_uid,
+    })
+
+    for item in series:
+        answer.append({
+            'modality': get_qido_rs_tag(item, 0x0008, 0x0060),
+            'series-description': get_qido_rs_tag(item, 0x0008, 0x103E),
+            'series-instance-uid': get_qido_rs_tag(item, 0x0020, 0x000E),
+        })
+
+    return json.dumps(answer)
 
 
 def ensure_uploads_directory():
@@ -72,7 +116,7 @@ def home():
                     flash('File uploaded successfully on the Orthanc server', 'success')
                 except Exception as e:
                     flash('Error: File not uploaded on the Orthanc server', 'error')
-        #print(dicomClient.listInstances("1.2.250.1.38.2.1.14.1.32100.3783939",'2.16.840.1.114362.1.6.1.4.13909.8443549972.396737424.944.519'))
+        # print(dicomClient.listInstances("1.2.250.1.38.2.1.14.1.32100.3783939",'2.16.840.1.114362.1.6.1.4.13909.8443549972.396737424.944.519'))
     return render_template('index.html', file=name)
 
 
@@ -218,12 +262,57 @@ def getDICOMfromWeb():
         if study_name:
             criteria['StudyDescription'] = study_name
         # Perform search with study name and patient name using DICOMwebClient
-        search_results = dicomClient.lookupInstances(criteria,True) # listInstance fonctionne nickel, pq ici ça marche pas ? TOdo : envoyer à l'assistante?
+        search_results = dicomClient.lookupInstances(criteria,
+                                                     True)  # listInstance fonctionne nickel, pq ici ça marche pas ? TOdo : envoyer à l'assistante?
         with open('search_results.json', 'w') as json_file:
             json.dump(search_results, json_file, indent=4)
         return render_template('search_results.html', results=search_results)
     else:
         return render_template('dicomweb_form.html')
+
+
+@app.route('/download_dicom', methods=['POST'])
+def download_dicom():
+    if request.method == 'POST':
+        return render_template('index.html')
+
+
+studies_uids = {}
+
+
+@app.route('/search_studies', methods=['POST'])
+def search_studies():
+    if request.method == 'POST':
+        patient_id = request.form.get('patientID')
+        patient_name = request.form.get('patientName')
+        study_description = request.form.get('studyDescription')
+        search_results = lookup_studies(patient_id, patient_name, study_description)
+        # var text = study['patient-id'] + ' - ' + study['patient-name'] + ' - ' + study['study-description']
+        results = []
+        for study in search_results:
+            print(study)
+            text = study['patient-id'] + ' - ' + study['patient-name'] + ' - ' + study['study-description']
+            results.append(text)
+            studies_uids[text] = study['study-instance-uid']
+
+        return render_template('dicomweb_form.html', studies=results)
+
+
+instances = {}
+
+
+@app.route('/getSeries', methods=['POST'])
+def getSeries():
+    if request.method == 'POST':
+        study_txt = request.form.get('Study')
+        study_instance_uid = studies_uids[study_txt]
+        search_results = lookup_series(study_instance_uid)
+        results = []
+        for series in search_results:
+            text = series['modality'] + ' - ' + series['series-description']
+            results.append(text)
+            instances[text] = series['series-instance-uid']
+        return render_template('search_results.html', series=results)
 
 
 @app.route('/show_dicom', methods=['GET', 'POST'])
@@ -235,7 +324,7 @@ def show_dicom():
             series_id = request.form.get('seriesID')
             print("Study and patient :", study_name, series_id)
             # Perform search with study name and patient name using DICOMwebClient
-            pngImage = dicomClient.getRenderedInstance(study_id, series_id,"000") #TODO : look for the correct SOP id
+            pngImage = dicomClient.getRenderedInstance(study_id, series_id, "000")  # TODO : look for the correct SOP id
             return render_template('show_dicom.html', pngFile=pngImage)
         except Exception as e:
             print("Error:", e)  # Print the error for debugging
