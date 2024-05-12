@@ -198,27 +198,31 @@ def display_nifti_infos():
         convert_DICOM_to_NIfTI("uploads", False)
 
     nifti_files = []
-    for study in os.listdir("data/NIFTII"):
-        for file in os.listdir("data/NIFTII/" + study):
-            if file.endswith('.nii.gz'):
-                nifti_file = os.path.join("data/NIFTII/" + study, file)
-                img = nib.load(nifti_file)
-                data = img.get_fdata()
-                header = img.header
-                affine = img.affine
-                shape = data.shape
-                dtype = data.dtype
-                filename = os.path.basename(nifti_file)
-                nifti_info = {
-                    'filename': str(filename),
-                    'shape': str(shape),
-                    'dtype': str(dtype),
-                    'zooms': str(header.get_zooms()),
-                    'affine': affine.tolist()
-                }
-                nifti_files.append(nifti_info)
-                nifti_info_json = json.dumps(nifti_info)
-                client.addStudyResult(study_name, nifti_info_json, 'Display NIFTII image')
+    try:
+        for study in os.listdir("data/NIFTII"):
+            for file in os.listdir("data/NIFTII/" + study):
+                if file.endswith('.nii.gz'):
+                    nifti_file = os.path.join("data/NIFTII/" + study, file)
+                    img = nib.load(nifti_file)
+                    data = img.get_fdata()
+                    header = img.header
+                    affine = img.affine
+                    shape = data.shape
+                    dtype = data.dtype
+                    filename = os.path.basename(nifti_file)
+                    nifti_info = {
+                        'filename': str(filename),
+                        'shape': str(shape),
+                        'dtype': str(dtype),
+                        'zooms': str(header.get_zooms()),
+                        'affine': affine.tolist()
+                    }
+                    nifti_files.append(nifti_info)
+                    nifti_info_json = json.dumps(nifti_info)
+                    client.addStudyResult(study_name, nifti_info_json, 'Display NIFTII image')
+    except Exception as e:
+        flash('Error during displaying information. This error might be caused because the files are too heavy.', 'error')
+        return render_template('index.html', study=study_name)
     return render_template('display.html', nifti_files=nifti_files)
 
 
