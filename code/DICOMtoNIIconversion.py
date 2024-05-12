@@ -126,7 +126,7 @@ def convert_DICOM_to_NIfTI(root, doing_study):
     dicom_root = "uploads/"
     unzip_root = "data/UNZIP/"
     niftii_root = "data/NIFTII/"
-    patient_list = "IRM_10.01.01_T2"#list_subdirectories(dicom_root)
+    patient_list = "IRM_10.01.01_T2"  # list_subdirectories(dicom_root)
     # study_path = create_directory(root + "/study_10")
     if doing_study:
         study_path = root + "/study_10/"

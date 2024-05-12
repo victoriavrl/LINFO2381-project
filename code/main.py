@@ -1,11 +1,16 @@
 import shutil
+from nilearn import plotting
 from flask import Flask, redirect, url_for, render_template, request, send_file, jsonify, flash, Response
-from DICOMtoNIIconversion import convert_DICOM_to_NIfTI, unzip_file, is_dicom_file
+from DICOMtoNIIconversion import convert_DICOM_to_NIfTI, unzip_file
 import os
 import nibabel as nib
 import Client as client
 import json
 from DICOMwebClient import DICOMwebClient
+import matplotlib
+
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
 
 app = Flask(__name__)
 
@@ -19,7 +24,8 @@ app.secret_key = "secret key"
 conversion_successful = False
 study_name = ""
 name = "No current file uploaded"
-dicomClient = DICOMwebClient('https://orthanc.uclouvain.be/demo/dicom-web')  # TODO : mettre un url specifique?
+dicomClient = DICOMwebClient('https://orthanc.uclouvain.be/demo/dicom-web')
+curr_study = ""
 
 
 # Copied and Adapted from Pratical Session 5 of DICOMweb
@@ -80,6 +86,7 @@ def lookup_series(study_instance_uid):
 
     return answer
 
+
 def ensure_uploads_directory():
     uploads_dir = 'uploads'
     if not os.path.exists(uploads_dir):
@@ -103,23 +110,6 @@ def home():
             name = file.filename
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(file_path)
-            if file.filename.endswith(
-                    ".zip"):
-                print(file.filename)
-                unzip_file(file_path, 'out')
-                for files in os.listdir('out'):
-                    for study in os.listdir('out/' + files):
-                        study_name_temp = os.path.join('out', files, study)
-                        if is_dicom_file(study_name_temp):
-                            dicomClient.uploadFromPath(study_name_temp)  # adding the DICOM file to the Orthanc server
-                flash('File uploaded successfully on the Orthanc server', 'success')
-            elif is_dicom_file(file_path):
-                try:
-                    dicomClient.uploadFromPath(file_path)  # adding the DICOM file to the Orthanc server
-                    flash('File uploaded successfully on the Orthanc server', 'success')
-                except Exception as e:
-                    flash('Error: File not uploaded on the Orthanc server', 'error')
-        # print(dicomClient.listInstances("1.2.250.1.38.2.1.14.1.32100.3783939",'2.16.840.1.114362.1.6.1.4.13909.8443549972.396737424.944.519'))
     return render_template('index.html', file=name)
 
 
@@ -175,25 +165,11 @@ def showjson(data):
     return render_template('content.html', data=str(json_string))
 
 
-# TODO : lier au mémoire de quentin ?
-@app.route('/DTI_analysis', methods=['POST'])
-def perform_download_action():
-    convert_DICOM_to_NIfTI("uploads", False)
-
-    # Check if conversion was successful
-    out_files = os.listdir('data/NIFTII')
-    print(out_files)
-
-    # TODO: when we have the json result from the back-end add it to couchdb with:
-    # addStudyResult(name, the_json_data)
-    return render_template('content.html', data=str("DTI analysis completed successfully!"))
-
-
 @app.route('/nifti_conversion', methods=['GET'])
 def perform_nifti_conversion():
     try:
         convert_DICOM_to_NIfTI("uploads", False)
-        if len(os.listdir('data/NIFTII' + name)) == 0:
+        if len(os.listdir('data/NIFTII' + name)) == 0 or not os.path.isdir('data/NIFTII' + name):
             flash('Error during conversion. Please verify the content of your files.', 'error')
         else:
             flash('Successful conversion', "error")
@@ -248,24 +224,26 @@ def display_nifti_infos():
 
 @app.route('/DICOMweb', methods=['GET', 'POST'])
 def getDICOMfromWeb():
+    global curr_study
     if request.method == 'POST':
         # Get the study name and patient name from the form
-        study_name = request.form.get('studyName')
+        studyName = request.form.get('studyName')
+        curr_study = studyName
         series_id = request.form.get('seriesID')
-        print("Study and patient :", study_name, series_id)
         criteria = {}
         if series_id:
             criteria['seriesInstanceUid'] = series_id
         if study_name:
-            criteria['StudyDescription'] = study_name
+            criteria['StudyDescription'] = studyName
         # Perform search with study name and patient name using DICOMwebClient
         search_results = dicomClient.lookupInstances(criteria,
-                                                     True)  # listInstance fonctionne nickel, pq ici ça marche pas ? TOdo : envoyer à l'assistante?
+                                                     True)
         with open('search_results.json', 'w') as json_file:
             json.dump(search_results, json_file, indent=4)
         return render_template('search_results.html', results=search_results)
     else:
-        return render_template('dicomweb_form.html')
+        return render_template('dicomweb_form.html', study=curr_study)
+
 
 def clear_uploads_directory(directory='uploads'):
     """
@@ -282,7 +260,7 @@ def clear_uploads_directory(directory='uploads'):
     # Iterate over each item in the directory
     for item_name in os.listdir(directory):
         item_path = os.path.join(directory, item_name)
-        
+
         # If it's a file, delete it
         if os.path.isfile(item_path) or os.path.islink(item_path):
             os.remove(item_path)
@@ -293,8 +271,9 @@ def clear_uploads_directory(directory='uploads'):
             print(f"Deleted directory: {item_path}")
 
 
-
 studies_uids = {}
+
+
 
 
 @app.route('/search_studies', methods=['POST'])
@@ -307,74 +286,116 @@ def search_studies():
         # var text = study['patient-id'] + ' - ' + study['patient-name'] + ' - ' + study['study-description']
         results = []
         print("search_results", search_results)
-        for study in search_results:
-            print(study)
-            text = study['patient-id'] + ' - ' + study['patient-name'] + ' - ' + study['study-description']
+        for study1 in search_results:
+            text = study1['patient-id'] + ' - ' + study1['patient-name'] + ' - ' + study1['study-description']
             results.append(text)
-            studies_uids[text] = study['study-instance-uid']
-
-        return render_template('dicomweb_form.html', studies=results)
+            studies_uids[text] = study1['study-instance-uid']
+        return render_template('dicomweb_form.html', studies=results, study=curr_study)
 
 
 instances = {}
-study=''
+study = ''
+
 
 @app.route('/getSeries', methods=['POST'])
 def getSeries():
-    global study
+    global study, curr_study
     if request.method == 'POST':
         study_txt = request.form.get('Study')
+        curr_study = study_txt
         study_instance_uid = studies_uids[study_txt]
-        study=study_instance_uid
+        study = study_instance_uid
         search_results = lookup_series(study_instance_uid)
         results = []
         for series in search_results:
             text = series['modality'] + ' - ' + series['series-description']
             results.append(text)
             instances[text] = series['series-instance-uid']
-        return render_template('dicomweb_form.html', series=results)
+        return render_template('dicomweb_form.html', series=results, study=curr_study)
+
+
+series = ''
+
 
 @app.route('/download_dicom', methods=['POST'])
 def download_dicom():
+    global series
     if request.method == 'POST':
-        #downloadInstancesOfSeries(self, studyInstanceUid, seriesInstanceUid)
-        series_txt = request.form.get('Serie') 
+        # downloadInstancesOfSeries(self, studyInstanceUid, seriesInstanceUid)
+        series_txt = request.form.get('Serie')
         series_instance_uid = instances[series_txt]
-        
-        d=dicomClient.downloadInstancesOfSeries(study, series_instance_uid) 
-        save_dicom_files(d, 'data/UNZIP')
+        series = series_instance_uid
+        d = dicomClient.downloadInstancesOfSeries(study, series_instance_uid)
+        save_dicom_files(d, 'uploads')
+        flash('DICOM files downloaded successfully', 'success')
+        return render_template('index.html', file=curr_study)
 
-    
-        return render_template('index.html')
 
 def save_dicom_files(parts, directory):
     for index, part in enumerate(parts):
-        #filepath directory/dicom_instance.dcm
-        file_path = directory+ '/dicom_instance' + str(index) + '.dcm'
-        print('filepath',file_path)
-        #if does not exist create the file
+        # filepath directory/dicom_instance.dcm
+        file_path = directory + '/dicom_instance' + str(index) + '.dcm'
+        # print('filepath',file_path)
+        # if does not exist create the file
         with open(file_path, 'wb') as file:
             file.write(part)
             file.close()
 
 
+instances_glob = []
+
+
 @app.route('/show_dicom', methods=['GET', 'POST'])
 def show_dicom():
+    global study, series, instances_glob
     if request.method == 'POST':
-        try:
-            # Get the study name and patient name from the form
-            study_id = request.form.get('studyName')
-            series_id = request.form.get('seriesID')
-            print("Study and patient :", study_name, series_id)
-            # Perform search with study name and patient name using DICOMwebClient
-            pngImage = dicomClient.getRenderedInstance(study_id, series_id, "000")  # TODO : look for the correct SOP id
-            return render_template('show_dicom.html', pngFile=pngImage)
-        except Exception as e:
-            print("Error:", e)  # Print the error for debugging
-            return Response("Internal Server Error", status=500)
+        instance = request.form.get("dicomSelector")
+        pngImage = dicomClient.getRenderedInstance(study, series, instance, False)
+        with open('static/image.png', 'wb') as f:
+            f.write(pngImage)
+        return render_template('show_dicom.html', lists=instances_glob)
     else:
-        return render_template('dicomweb_form.html')
- 
+        if study != '' and series != '':
+            try:
+                instances_glob = dicomClient.listInstances(study, series)
+                return render_template('show_dicom.html', lists=instances)
+            except Exception as e:
+                print("Error:", e)  # Print the error for debugging
+                return Response("Internal Server Error", status=500)
+        else:
+            return render_template('dicomweb_form.html', study=curr_study)
+
+
+@app.route('/show_nifti', methods=['GET', 'POST'])
+def show_nifti():
+    niftis, paths = look_for_nifti_instances()
+    if request.method == 'POST':
+        instance = request.form.get("niftiSelector")
+        p = paths[instance]
+        pngImage = plotting.plot_img(nib.load(p))
+        pngImage.savefig('static/image_nifti.png')
+    return render_template('show_nifti.html', lists=niftis)
+
+
+def look_for_nifti_instances():
+    nifti_instances = []
+    nifti_paths = {}
+    for root, dirs, files in os.walk('data/NIFTII'):
+        for direc in dirs:
+            file_path = os.path.join(root, direc)
+            if os.path.isdir(file_path) and contains_nifti_files(file_path):
+                for f in os.listdir(file_path):
+                    if f.endswith('.nii.gz'):
+                        nifti_instances.append(f)
+                        nifti_paths[f] = (os.path.join(file_path, f))
+    return nifti_instances, nifti_paths
+
+
+def contains_nifti_files(filepath):
+    for file in os.listdir(filepath):
+        if file.endswith('.nii.gz'):
+            return True
+
 
 if __name__ == "__main__":
     app.run(debug=True)

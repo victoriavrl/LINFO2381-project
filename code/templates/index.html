@@ -36,14 +36,14 @@ Uploading files from a scan
         <div class="col-md-6">
             <form id="actionForm" class="mt-3">
                 <div class="form-group">
-                    <label for="actionSelect">Select Action on file {{ file }} </label>
+                    <label for="actionSelect">Select Action on {{ file }} </label>
 
                     <select class="form-control" id="actionSelect">
                         <option value="visualize">Show information about my file</option>
                         <option value="niftiConversionDTI">Convert DICOM files into Nifti files for DTI analysis</option>
                         <option value="niftiConversion">Convert DICOM files into Nifti files</option>
                         <option value="showDICOM">Display DICOM files</option>
-                        <option value="DTI">DTI Analysis - Download Study Folder</option>
+                        <option value="showNIFTI">Display NIFTI files</option>
                     </select>
                 </div>
                 <button type="button" class="btn btn-primary btn-block" onclick="performAction()">Perform Action</button>
@@ -73,30 +73,6 @@ function performAction() {
     var fileName = document.getElementById("actionForm").getAttribute("data-filename");
 
     switch (selectedAction) {
-        case "DTI":
-            fetch('/DTI_analysis', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ action: 'DTI', filename: fileName })
-            })
-            .then(response => {
-                if (response.ok) {
-                    window.location.href = '/download_study_zip';
-                } else {
-                    // Handle error cases
-                    console.error('Error performing DTI analysis');
-                    $('#loading').hide();
-                    alert('Error performing DTI analysis');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                $('#loading').hide();
-                alert('Error performing DTI analysis');
-            });
-            break;
         case "visualize":
             window.location.href = '/display_info';
             break;
@@ -108,6 +84,9 @@ function performAction() {
             break;
         case "showDICOM":
             window.location.href = '/show_dicom';
+            break;
+        case "showNIFTI":
+            window.location.href = '/show_nifti';
             break;
         default:
             console.error('Invalid action selected');

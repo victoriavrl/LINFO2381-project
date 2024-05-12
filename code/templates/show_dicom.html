@@ -1,15 +1,31 @@
 {% extends "base.html" %}
 {% block pageTitle %}
- DICOM image
+DICOM image
 {% endblock %}
 {% block content %}
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-8">
-                <div id="display">
-                  <img id="dicom" src={{ pngFile }}>
+            <div>
+            <form action="/show_dicom" method="post" class="mt-3">
+                <div class="form-group">
+                <label for="dicomSelector">Select DICOM Image:</label>
+                <select id="dicomSelector" name="dicomSelector" class="form-control">
+                    {% for instance in lists %}
+                        <option value="{{ instance }}" >{{ instance }}</option>
+                    {% endfor %}
+                </select>
+                <div class="form-group">
+                    <button type="submit" id="displayButton" class="btn btn-primary mr-2">Display</button>
                 </div>
+                </div>
+            </form>
+            </div>
+            <div id="display">
+                <img id="dicom" src='static/image.png' alt="DICOM Image">
+            </div>
         </div>
     </div>
 </div>
 {% endblock %}
+
