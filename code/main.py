@@ -222,6 +222,7 @@ def display_nifti_infos():
                     client.addStudyResult(study_name, nifti_info_json, 'Display NIFTII image')
     except Exception as e:
         flash('Error during displaying information. This error might be caused because the files are too heavy.', 'error')
+        return render_template('index.html', study=study_name)
     return render_template('display.html', nifti_files=nifti_files)
 
 
