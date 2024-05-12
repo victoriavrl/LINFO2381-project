@@ -34,6 +34,7 @@ _STUDY_INSTANCE_UID = '0020000D'
 _SERIES_INSTANCE_UID = '0020000E'
 _SOP_INSTANCE_UID = '00080018'
 
+
 # Class that represents a connection to some DICOMweb server
 class DICOMwebClient:
 
@@ -44,12 +45,12 @@ class DICOMwebClient:
     #   $ docker run --rm -t -i -p 8042:8042 -p 4242:4242 jodogne/orthanc-plugins:1.12.3
     #
     def __init__(self,
-                 url = 'http://localhost:8042/dicom-web',
-                 username = 'orthanc',
-                 password = 'orthanc'):
+                 url='http://localhost:8042/dicom-web',
+                 username='orthanc',
+                 password='orthanc'):
         # Make sure that the URL does not end with a slash
         if url.endswith('/'):
-            self.url = url[0 : len(url) - 1]
+            self.url = url[0: len(url) - 1]
         else:
             self.url = url
 
@@ -71,13 +72,13 @@ class DICOMwebClient:
         parts = []
 
         for i, part in enumerate(msg.walk(), 1):
-            content = part.get_payload(decode = True)
+            content = part.get_payload(decode=True)
             if content != None:
                 parts.append(content)
 
         return parts
 
-    def _sendMultipart(self, url, parts, mime, accept = None):
+    def _sendMultipart(self, url, parts, mime, accept=None):
         # Create a multipart message whose body contains all the input "parts"
         boundary = str(uuid.uuid4())  # The boundary is a random UUID
 
@@ -94,16 +95,16 @@ class DICOMwebClient:
             body = f.read()
 
         headers = {
-            'Content-Type' : 'multipart/related; type="%s"; boundary=%s' % (mime, boundary),
+            'Content-Type': 'multipart/related; type="%s"; boundary=%s' % (mime, boundary),
         }
 
         if accept != None:
             headers['Accept'] = accept
-        
+
         r = requests.post(url,
-                          auth = self._getAuthentication(),
-                          headers = headers,
-                          data = body)
+                          auth=self._getAuthentication(),
+                          headers=headers,
+                          data=body)
         r.raise_for_status()
 
         return r.content
@@ -115,12 +116,11 @@ class DICOMwebClient:
 
         return result
 
-
     # Return all the DICOM instances (as arrays of bytes) inside the
     # study whose "Study Instance UID" is provided (WADO-RS request).
     def downloadInstancesOfStudy(self, studyInstanceUid):
         r = requests.get('%s/studies/%s' % (self.url, studyInstanceUid),
-                         auth = self._getAuthentication())
+                         auth=self._getAuthentication())
         r.raise_for_status()
 
         parts = self._parseMultipart(r)
@@ -130,14 +130,13 @@ class DICOMwebClient:
         else:
             return parts
 
-
     # Return all the DICOM instances (as arrays of bytes) inside the
     # series whose "Series Instance UID" is provided (WADO-RS
     # request). The "Study Instance UID" of the parent study must also
     # be provided.
     def downloadInstancesOfSeries(self, studyInstanceUid, seriesInstanceUid):
         r = requests.get('%s/studies/%s/series/%s' % (self.url, studyInstanceUid, seriesInstanceUid),
-                         auth = self._getAuthentication())
+                         auth=self._getAuthentication())
         r.raise_for_status()
 
         parts = self._parseMultipart(r)
@@ -147,7 +146,6 @@ class DICOMwebClient:
         else:
             return parts
 
-
     # Return the DICOM instance (as one array of bytes) that
     # corresponds to the instance whose "SOP Instance UID" is provided
     # (WADO-RS request). The "Study Instance UID" and the "Series
@@ -155,7 +153,7 @@ class DICOMwebClient:
     def downloadInstance(self, studyInstanceUid, seriesInstanceUid, sopInstanceUid):
         r = requests.get('%s/studies/%s/series/%s/instances/%s' %
                          (self.url, studyInstanceUid, seriesInstanceUid, sopInstanceUid),
-                         auth = self._getAuthentication())
+                         auth=self._getAuthentication())
         r.raise_for_status()
 
         parts = self._parseMultipart(r)
@@ -165,12 +163,10 @@ class DICOMwebClient:
         else:
             return parts[0]
 
-
     # Upload a DICOM instance provided as an array of bytes to the
     # DICOMweb server (STOW-RS request).
     def uploadFromBytes(self, content):
-        r = self._sendMultipart('%s/studies' % self.url, [ content ], 'application/dicom', 'application/dicom+json')
-
+        r = self._sendMultipart('%s/studies' % self.url, [content], 'application/dicom', 'application/dicom+json')
 
     # Upload a DICOM instance provided as a path on the filesystem to
     # the DICOMweb server (STOW-RS request).
@@ -178,27 +174,24 @@ class DICOMwebClient:
         with open(path, 'rb') as f:
             self.uploadFromBytes(f.read())
 
-
     # List the "Study Instance UID" tag of all the studies that are
     # stored on the DICOMweb server (QIDO-RS request).
     def listStudies(self):
         r = requests.get('%s/studies' % self.url,
-                         auth = self._getAuthentication())
+                         auth=self._getAuthentication())
         r.raise_for_status()
 
         return self._extractTagValues(r.json(), _STUDY_INSTANCE_UID)
-
 
     # List the "Series Instance UID" tag of all the series that are
     # stored on the DICOMweb server inside the study whose "Study
     # Instance UID" is provided (QIDO-RS request).
     def listSeries(self, studyInstanceUid):
         r = requests.get('%s/studies/%s/series' % (self.url, studyInstanceUid),
-                         auth = self._getAuthentication())
+                         auth=self._getAuthentication())
         r.raise_for_status()
 
         return self._extractTagValues(r.json(), _SERIES_INSTANCE_UID)
-
 
     # List the "SOP Instance UID" tag of all the instances that are
     # stored on the DICOMweb server inside the study/series whose
@@ -207,21 +200,20 @@ class DICOMwebClient:
     def listInstances(self, studyInstanceUid, seriesInstanceUid):
         r = requests.get('%s/studies/%s/series/%s/instances' %
                          (self.url, studyInstanceUid, seriesInstanceUid),
-                         auth = self._getAuthentication())
+                         auth=self._getAuthentication())
         r.raise_for_status()
 
         return self._extractTagValues(r.json(), _SOP_INSTANCE_UID)
-
 
     # Look for DICOM studies whose tags match the "criteria"
     # dictionary (QIDO-RS request). If the "onlyIdentifiers" argument
     # is true, the method returns the "Study Instance UID" tags of all
     # the matching studies. Otherwise, the DICOM tags of the study
     # module are returned, formatted using the DICOMweb JSON format.
-    def lookupStudies(self, criteria, onlyIdentifiers = False):
+    def lookupStudies(self, criteria, onlyIdentifiers=False):
         r = requests.get('%s/studies' % self.url,
-                         auth = self._getAuthentication(),
-                         params = criteria)
+                         auth=self._getAuthentication(),
+                         params=criteria)
         r.raise_for_status()
 
         if onlyIdentifiers:
@@ -229,17 +221,16 @@ class DICOMwebClient:
         else:
             return r.json()
 
-
     # Look for DICOM series whose tags match the "criteria" dictionary
     # (QIDO-RS request). If the "onlyIdentifiers" argument is true,
     # the method returns both the "Study Instance UID" and "Series
     # Instance UID" tags of all the matching series. Otherwise, the
     # DICOM tags of the study and series modules are returned,
     # formatted using the DICOMweb JSON format.
-    def lookupSeries(self, criteria, onlyIdentifiers = False):
+    def lookupSeries(self, criteria, onlyIdentifiers=False):
         r = requests.get('%s/series' % self.url,
-                         auth = self._getAuthentication(),
-                         params = criteria)
+                         auth=self._getAuthentication(),
+                         params=criteria)
         r.raise_for_status()
 
         if onlyIdentifiers:
@@ -248,7 +239,6 @@ class DICOMwebClient:
         else:
             return r.json()
 
-
     # Look for DICOM instances whose tags match the "criteria"
     # dictionary (QIDO-RS request). If the "onlyIdentifiers" argument
     # is true, the method returns the "Study Instance UID", the
@@ -256,10 +246,10 @@ class DICOMwebClient:
     # the matching instances. Otherwise, the DICOM tags at the study,
     # series, and instances modules are returned, formatted using the
     # DICOMweb JSON format.
-    def lookupInstances(self, criteria, onlyIdentifiers = False):
+    def lookupInstances(self, criteria, onlyIdentifiers=False):
         r = requests.get('%s/instances' % self.url,
-                         auth = self._getAuthentication(),
-                         params = criteria)
+                         auth=self._getAuthentication(),
+                         params=criteria)
         r.raise_for_status()
 
         if onlyIdentifiers:
@@ -269,20 +259,19 @@ class DICOMwebClient:
         else:
             return r.json()
 
-
     # Render the DICOM instance that corresponds to the instance whose
     # "SOP Instance UID" is provided (WADO-RS request). The "Study
     # Instance UID" and the "Series Instance UID" of the parent
     # study/series must also be provided. If the "decode" argument is
     # true, the method returns a PIL/Pillow image. Otherwise, the
     # method is a plain PNG file.
-    def getRenderedInstance(self, studyInstanceUid, seriesInstanceUid, sopInstanceUid, decode = True):
+    def getRenderedInstance(self, studyInstanceUid, seriesInstanceUid, sopInstanceUid, decode=True):
         r = requests.get('%s/studies/%s/series/%s/instances/%s/rendered' %
                          (self.url, studyInstanceUid, seriesInstanceUid, sopInstanceUid),
-                         auth = self._getAuthentication(),
-                         headers = {
+                         auth=self._getAuthentication(),
+                         headers={
                              # Ask the DICOMweb server to generate a lossless rendering
-                             'Accept' : 'image/png',
+                             'Accept': 'image/png',
                          })
         r.raise_for_status()
 

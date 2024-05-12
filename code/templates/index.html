@@ -7,9 +7,17 @@ Uploading files from a scan
 
 {% block content %}
 <div class="container">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="alert alert-success" role="alert">
+          {% for message in messages %}
+            {{ message }}
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
     <div class="row">
         <div class="col-md-6">
-            <!-- Form to upload files -->
             <form id="uploadForm" action="" method="post" class="mt-3" enctype="multipart/form-data">
                 <div class="form-group">
                     <label for="studyName">Enter Study Name:</label>
@@ -34,10 +42,11 @@ Uploading files from a scan
                         <option value="visualize">Show information about my file</option>
                         <option value="niftiConversionDTI">Convert DICOM files into Nifti files for DTI analysis</option>
                         <option value="niftiConversion">Convert DICOM files into Nifti files</option>
+                        <option value="showDICOM">Display DICOM files</option>
                         <option value="DTI">DTI Analysis - Download Study Folder</option>
                     </select>
                 </div>
-                <button type="button" class="btn btn-primary btn-block" onclick="performAction();$('#loading').show();">Perform Action</button>
+                <button type="button" class="btn btn-primary btn-block" onclick="performAction()">Perform Action</button>
             </form>
             <div id="loading" style="display:none;"><img src="static/loading.gif" alt="" />Loading!</div>
         </div>
@@ -55,46 +64,56 @@ Uploading files from a scan
         }
     }
 
-    function performAction() {
-        var actionSelect = document.getElementById("actionSelect");
-        var selectedAction = actionSelect.value;
-        var fileName = document.getElementById("actionForm").getAttribute("data-filename");
+function performAction() {
+    // Show loading animation for every case
+    $('#loading').show();
 
-        switch (selectedAction) {
-            case "DTI":
-                fetch('/DTI_analysis', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ action: 'DTI', filename: fileName })
-                })
-                    .then(response => {
-                        if (response.ok) {
-                            // If the action was successful, redirect the user to the download route
-                            window.location.href = '/download_study_zip';
-                        } else {
-                            // Handle error cases
-                            console.error('Error performing download action');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                    });
-                break;
-            case "visualize":
-                window.location.href = '/display_info';
-                break;
-            case "niftiConversion":
-                window.location.href = '/nifti_conversion';
-                break;
-            case "niftiConversionDTI":
-                window.location.href = '/nifti_conversionDTI';
-                break;
-            default:
-                console.error('Invalid action selected');
-        }
+    var actionSelect = document.getElementById("actionSelect");
+    var selectedAction = actionSelect.value;
+    var fileName = document.getElementById("actionForm").getAttribute("data-filename");
+
+    switch (selectedAction) {
+        case "DTI":
+            fetch('/DTI_analysis', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ action: 'DTI', filename: fileName })
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = '/download_study_zip';
+                } else {
+                    // Handle error cases
+                    console.error('Error performing DTI analysis');
+                    $('#loading').hide();
+                    alert('Error performing DTI analysis');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                $('#loading').hide();
+                alert('Error performing DTI analysis');
+            });
+            break;
+        case "visualize":
+            window.location.href = '/display_info';
+            break;
+        case "niftiConversion":
+            window.location.href = '/nifti_conversion';
+            break;
+        case "niftiConversionDTI":
+            window.location.href = '/nifti_conversionDTI';
+            break;
+        case "showDICOM":
+            window.location.href = '/show_dicom';
+            break;
+        default:
+            console.error('Invalid action selected');
     }
+}
+
 
     function submitForm() {
         document.getElementById("uploadForm").submit();

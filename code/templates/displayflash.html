@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block pageTitle %}
+Conversion from DICOM to NIFTI
+{% endblock %}
+{% block content %}
+<div class="container">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="alert alert-success" role="alert">
+          {% for message in messages %}
+            {{ message }}
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+</div>
+{% endblock %}
+
+<!------ TODO : possibility to dowload to files ? ---------->
