@@ -1,6 +1,6 @@
 import shutil
 from nilearn import plotting
-from flask import Flask, redirect, url_for, render_template, request, send_file, jsonify, flash, Response
+from flask import Flask, redirect, url_for, render_template, request, send_file, jsonify, flash, Response, session
 from DICOMtoNIIconversion import convert_DICOM_to_NIfTI, unzip_file
 import os
 import nibabel as nib
@@ -102,11 +102,11 @@ def home():
         clear_uploads_directory()
         clear_uploads_directory('data/NIFTII')
         clear_uploads_directory('data/UNZIP')
-        study_name = request.form.get('studyName')  # Get study name
+        session['study_name'] = request.form.get('studyName')  # Get study name
         file = request.files['file']  # Get uploaded file
 
         # If file is present and valid, save it temporarily and set the message
-        if file and study_name:
+        if file and session['study_name']:
             name = file.filename
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(file_path)
@@ -193,6 +193,7 @@ def perform_nifti_conversionDTI():
 @app.route('/display_info')
 def display_nifti_infos():
     global study_name
+    study_name = session['study_name']
     out_files = os.listdir('data/NIFTII')
     if len(out_files) == 0:
         convert_DICOM_to_NIfTI("uploads", False)
