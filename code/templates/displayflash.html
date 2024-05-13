@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block pageTitle %}
-Conversion from DICOM to NIFTI
+Conversion from DICOM to NIFTI for file {{ file }}
 {% endblock %}
 {% block content %}
 <div class="container">
@@ -13,7 +13,6 @@ Conversion from DICOM to NIFTI
         </div>
       {% endif %}
     {% endwith %}
+    <button type="button" class="btn btn-primary btn-block" onclick="window.location.href='/';">Return home to perform more actions on your files</button>
 </div>
 {% endblock %}
-
-<!------ TODO : possibility to dowload to files ? ---------->
