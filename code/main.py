@@ -326,6 +326,9 @@ def download_dicom():
     global series
     if request.method == 'POST':
         # downloadInstancesOfSeries(self, studyInstanceUid, seriesInstanceUid)
+        clear_uploads_directory()
+        clear_uploads_directory('data/NIFTII')
+        clear_uploads_directory('data/UNZIP')
         series_txt = request.form.get('Serie')
         series_instance_uid = instances[series_txt]
         series = series_instance_uid
