@@ -1,6 +1,6 @@
 import shutil
 from nilearn import plotting
-from flask import Flask, redirect, url_for, render_template, request, send_file, jsonify, flash, Response
+from flask import Flask, render_template, request, send_file,  flash, Response
 from DICOMtoNIIconversion import convert_DICOM_to_NIfTI, unzip_file
 import os
 import nibabel as nib
@@ -8,23 +8,22 @@ import Client as client
 import json
 from DICOMwebClient import DICOMwebClient
 import matplotlib
-
 matplotlib.use('TkAgg')
-import matplotlib.pyplot as plt
+
 
 app = Flask(__name__)
-
-# Initialize the client and Couch DB
-client.client_init()
-
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.secret_key = "secret key"
 
+# Initialize the clients for Couch DB and DICOMweb
+client.client_init()
+dicomClient = DICOMwebClient('https://orthanc.uclouvain.be/demo/dicom-web')
+
+# Global variables
 conversion_successful = False
 study_name = ""
 name = "No current file uploaded"
-dicomClient = DICOMwebClient('https://orthanc.uclouvain.be/demo/dicom-web')
 curr_study = ""
 
 
@@ -95,8 +94,7 @@ def ensure_uploads_directory():
 
 @app.route("/", methods=["POST", "GET"])
 def home():
-    global conversion_successful, name
-    global study_name
+    global name, study_name
     ensure_uploads_directory()
     if request.method == "POST":
         clear_uploads_directory()
@@ -110,6 +108,11 @@ def home():
             name = file.filename
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(file_path)
+            unzip_file(file_path, 'data/UNZIP')
+        elif not study_name:
+            flash("Please provide a study name and retry.")
+        elif not file:
+            flash("Please provide a file and retry.")
     return render_template('index.html', file=name)
 
 
@@ -124,7 +127,7 @@ def history():
 
     if request.method == "POST":
         # Get the study name from the form
-        study_name = request.form.get('searchStudyName')
+        studyName = request.form.get('searchStudyName')
 
         # Get the results from the form
         time = request.form.get('searchStudyDate')
@@ -132,8 +135,8 @@ def history():
         # Add the study name and results to the database
         if time:
             composition = client.searchByDate(time)
-        if study_name:
-            composition = client.searchByName(study_name)
+        if studyName:
+            composition = client.searchByName(studyName)
         # process the composition to get date time and result
         else:
             composition = []
@@ -169,7 +172,7 @@ def showjson(data):
 def perform_nifti_conversion():
     try:
         convert_DICOM_to_NIfTI("uploads", False)
-        if len(os.listdir('data/NIFTII' + name)) == 0 or not os.path.isdir('data/NIFTII' + name):
+        if len(os.listdir('data/NIFTII/' + name)) == 0 or not os.path.isdir('data/NIFTII/' + name):
             flash('Error during conversion. Please verify the content of your files.', 'error')
         else:
             flash('Successful conversion', "error")
@@ -237,7 +240,7 @@ def getDICOMfromWeb():
         criteria = {}
         if series_id:
             criteria['seriesInstanceUid'] = series_id
-        if study_name:
+        if studyName:
             criteria['StudyDescription'] = studyName
         # Perform search with study name and patient name using DICOMwebClient
         search_results = dicomClient.lookupInstances(criteria,
@@ -325,7 +328,6 @@ series = ''
 def download_dicom():
     global series
     if request.method == 'POST':
-        # downloadInstancesOfSeries(self, studyInstanceUid, seriesInstanceUid)
         clear_uploads_directory()
         clear_uploads_directory('data/NIFTII')
         clear_uploads_directory('data/UNZIP')
@@ -357,12 +359,13 @@ def show_dicom():
     global study, series, instances_glob
     if request.method == 'POST':
         instance = request.form.get("dicomSelector")
+        print(instance)
         pngImage = dicomClient.getRenderedInstance(study, series, instance, False)
         with open('static/image.png', 'wb') as f:
             f.write(pngImage)
         return render_template('show_dicom.html', lists=instances_glob)
     else:
-        if study != '' and series != '':
+        if study != '' or series != '':
             try:
                 instances_glob = dicomClient.listInstances(study, series)
                 return render_template('show_dicom.html', lists=instances)
@@ -370,17 +373,21 @@ def show_dicom():
                 print("Error:", e)  # Print the error for debugging
                 return Response("Internal Server Error", status=500)
         else:
-            return render_template('dicomweb_form.html', study=curr_study)
+            flash('You didn\'t download any DICOM file. Please select or upload DICOM files and retry.', 'error')
+            return render_template('index.html')
 
 
 @app.route('/show_nifti', methods=['GET', 'POST'])
 def show_nifti():
     niftis, paths = look_for_nifti_instances()
     if request.method == 'POST':
-        instance = request.form.get("niftiSelector")
-        p = paths[instance]
-        pngImage = plotting.plot_img(nib.load(p))
-        pngImage.savefig('static/image_nifti.png')
+        try :
+            instance = request.form.get("niftiSelector")
+            p = paths[instance]
+            pngImage = plotting.plot_img(nib.load(p))
+            pngImage.savefig('static/image_nifti.png')
+        except Exception as e:
+            flash("There isn't any NIFTI file selected. Please select a NIFTI file and retry.", 'error')
     return render_template('show_nifti.html', lists=niftis)
 
 

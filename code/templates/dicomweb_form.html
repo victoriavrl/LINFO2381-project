@@ -27,6 +27,7 @@ Search for DICOM files on Orthanc
                 <div class="form-group">
                     <label for="Study">Select a Study:</label>
                     <select class="form-control" name="Study" id="Study">
+                        <option value="">No selection</option>
                         {% for contestant in studies %}
                             <option value="{{ contestant }}">{{ contestant }}</option>
                         {% endfor %}
@@ -39,6 +40,7 @@ Search for DICOM files on Orthanc
                 <div class="form-group">
                     <label for="Serie">Select a Serie for Study {{ study }}:</label>
                     <select id="Serie" name="Serie" class="form-control">
+                         <option value="">No selection</option>
                         {% for contestant in series %}
                             <option value="{{ contestant }}">{{ contestant }}</option>
                         {% endfor %}
