@@ -5,6 +5,22 @@ import platform
 import pydicom
 
 
+# Checks if the directory contains zip files
+def check_for_zip_files(directory):
+    # List all files in the directory
+    files = os.listdir(directory)
+
+    # Filter files to find those ending with '.zip'
+    zip_files = [file for file in files if file.endswith('.zip')]
+
+    # Check if there are any zip files
+    if zip_files:
+        return True
+    else:
+        return False
+
+
+# Checks if the directory contains dicom files
 def contains_dicom_files(directory):
     print(directory)
     for filename in os.listdir(directory):
@@ -19,6 +35,7 @@ def contains_dicom_files(directory):
     return False
 
 
+# Delete all files and directories within the specified directory
 def empty_directory(directory):
     try:
         # Recursively remove all files and directories within the specified directory
@@ -47,6 +64,7 @@ def empty_directory(directory):
         print(f"Error occurred: {e}")
 
 
+# Rename a file
 def rename(old_name, new_name):
     try:
         # Split the file name and extension
@@ -76,14 +94,16 @@ def move_file(source, destination):
         print(f"Error occurred: {e}")
 
 
+# Convert DICOM files to NIfTI format with dcm2niix
 def conversion(filename, out):
     os_name = platform.system()
-    librairy = ''
+    library = ''
+    # The library is different according to the operating system
     if os_name == "Windows":
-        librairy = 'dcm2niix.exe '
+        library = 'dcm2niix.exe '
     elif os_name == "Linux":
-        librairy = 'dcm2niix '
-    os.system(librairy +
+        library = 'dcm2niix '
+    os.system(library +
               '-f %f_%d_%t ' +
               '-b y ' +
               '-d 9 ' +
@@ -108,13 +128,12 @@ def create_directory(directory):
             os.makedirs(new_directory)
         else:
             print(f"New directory '{new_directory}' already exists.")
-
     return directory + "/"
 
 
+# List all files and directories in the specified directory
 def list_subdirectories(directory):
     subdirectories = []
-    # List all files and directories in the specified directory
     for item in os.listdir(directory):
         item = item.replace(".zip", "")
         subdirectories.append(item)
@@ -122,12 +141,14 @@ def list_subdirectories(directory):
 
 
 def convert_DICOM_to_NIfTI(root, doing_study):
-    # doing_study = False
+    """
+    Converts DICOM files to NIfTI format according to the study type
+    :param root: the root directory of the study
+    :param doing_study: doing the conversion for DTI analysis or not
+    """
     dicom_root = "uploads/"
     unzip_root = "data/UNZIP/"
     niftii_root = "data/NIFTII/"
-    patient_list = "IRM_10.01.01_T2"  # list_subdirectories(dicom_root)
-    # study_path = create_directory(root + "/study_10")
     if doing_study:
         study_path = root + "/study_10/"
         if not os.path.exists(study_path):
@@ -154,52 +175,55 @@ def convert_DICOM_to_NIfTI(root, doing_study):
 
     print("all subdirectories")
 
-    patient_list = list_subdirectories(dicom_root)
     empty_directory(unzip_root)
     empty_directory(niftii_root)
 
     print("empty")
 
-    for patient in patient_list:  # patients directory
-        if doing_study and not os.path.exists(study_path + "/subjects/" + patient):
-            os.makedirs(study_path + "/subjects/" + patient)
-        if not os.path.exists(niftii_root + "/" + patient):
-            os.makedirs(niftii_root + "/" + patient)
-        if not os.path.exists(unzip_root + "/" + patient):
-            os.makedirs(unzip_root + "/" + patient)
+    if doing_study and not os.path.exists(study_path + "/subjects/"):
+        os.makedirs(study_path + "/subjects/")
+    if not os.path.exists(niftii_root):
+        os.makedirs(niftii_root)
+    if not os.path.exists(unzip_root):
+        os.makedirs(unzip_root)
 
     print("patient directories")
 
-    for patient in patient_list:  # unzip
-        unzip_file(dicom_root + "/" + patient + ".zip", unzip_root + "/" + patient + "/")
+    dicom_files = os.listdir(dicom_root)
+    print("1")
+    patient = dicom_files[0]
+    print("2")
+    if check_for_zip_files(dicom_root):
+        print("3")
+        unzip_file(dicom_root + "/" + patient, unzip_root)
 
     print("unziping")
 
-    for patient in patient_list:  # conversion
-        for root, dirs, files in os.walk(unzip_root + patient):
-            for direc in dirs:
-                file_path = os.path.join(root, direc)
-                if os.path.isdir(file_path) and contains_dicom_files(file_path):
-                    conversion(file_path, niftii_root + "/" + patient)
+    if contains_dicom_files(dicom_root):
+        conversion(dicom_root, niftii_root)
+    for root, dirs, files in os.walk(unzip_root):
+        for direc in dirs:
+            file_path = os.path.join(root, direc)
+            if os.path.isdir(file_path) and contains_dicom_files(file_path):
+                conversion(file_path, niftii_root)
 
     print("conversion")
 
     if doing_study:
-        for patient in patient_list:
-            fichiers = os.listdir(niftii_root + "/" + patient)
-            for fichier in fichiers:
-                print(fichier)
-                if 'T1' in fichier:
-                    print("T1")
-                    move_file(niftii_root + patient + "/" + fichier, study_path + "/data_T1")
-                    rename(study_path + "/data_T1/" + fichier, study_path + "/data_T1/" + patient + "_T1")
+        fichiers = os.listdir(niftii_root + "/" + patient)
+        for fichier in fichiers:
+            print(fichier)
+            if 'T1' in fichier:
+                print("T1")
+                move_file(niftii_root + patient + "/" + fichier, study_path + "/data_T1")
+                rename(study_path + "/data_T1/" + fichier, study_path + "/data_T1/" + patient + "_T1")
 
-                elif 'T2' in fichier:
-                    print("T2")
-                    move_file(niftii_root + patient + "/" + fichier, study_path + "/data_T2")
-                    rename(study_path + "/data_T2/" + fichier, study_path + "/data_T2/" + patient + "_T2")
+            elif 'T2' in fichier:
+                print("T2")
+                move_file(niftii_root + patient + "/" + fichier, study_path + "/data_T2")
+                rename(study_path + "/data_T2/" + fichier, study_path + "/data_T2/" + patient + "_T2")
 
-                elif 'DTI' in fichier:
-                    print("DTI")
-                    move_file(niftii_root + patient + "/" + fichier, study_path + "/data_1")
-                    rename(study_path + "/data_1/" + fichier, study_path + "/data_1/" + patient + "_DTI")
+            elif 'DTI' in fichier:
+                print("DTI")
+                move_file(niftii_root + patient + "/" + fichier, study_path + "/data_1")
+                rename(study_path + "/data_1/" + fichier, study_path + "/data_1/" + patient + "_DTI")

@@ -3,10 +3,11 @@ import os
 from main import dicomClient
 
 
+# This function looks for nifti files in the data directory
 def look_for_nifti_instances():
     nifti_instances = []
     nifti_paths = {}
-    for root, dirs, files in os.walk('data/NIFTII'):
+    for root, dirs, files in os.walk('data'):
         for direc in dirs:
             file_path = os.path.join(root, direc)
             if os.path.isdir(file_path) and contains_nifti_files(file_path):
@@ -17,14 +18,14 @@ def look_for_nifti_instances():
     return nifti_instances, nifti_paths
 
 
+# This function checks if a directory contains nifti files
 def contains_nifti_files(filepath):
     for file in os.listdir(filepath):
         if file.endswith('.nii.gz'):
             return True
 
 
-# Copied and Adapted from Pratical Session 5 of DICOMweb
-
+# Inspired from Practical Session 5 of course LINFO2381
 def lookup_studies(patient_id, patient_name, study_description):
     answer = []
 
@@ -45,7 +46,7 @@ def lookup_studies(patient_id, patient_name, study_description):
     return answer
 
 
-# Copied from Pratical Session 5 of DICOMweb
+# Inspired from Practical Session 5 of course LINFO2381
 
 # This function extracts one tag of interest from a QIDO-RS response
 # formatted in JSON. The DICOM tag must be specified by providing the
@@ -63,8 +64,7 @@ def get_qido_rs_tag(json, group, element):
         return ''
 
 
-# Copied and adapted from Pratical Session 5 of DICOMweb
-
+# Inspired from Practical Session 5 of course LINFO2381
 def lookup_series(study_instance_uid):
     answer = []
 
@@ -88,13 +88,8 @@ def ensure_uploads_directory():
         os.makedirs(uploads_dir)
 
 
+#  Clears all files and subdirectories in the specified 'uploads' directory.
 def clear_uploads_directory(directory='uploads'):
-    """
-    Clears all files and subdirectories in the specified 'uploads' directory.
-
-    Args:
-    directory (str): The path to the directory that needs to be cleared.
-    """
     # Check if the directory exists
     if not os.path.exists(directory):
         print(f"The directory {directory} does not exist.")
@@ -118,8 +113,7 @@ def save_dicom_files(parts, directory):
     for index, part in enumerate(parts):
         # filepath directory/dicom_instance.dcm
         file_path = directory + '/dicom_instance' + str(index) + '.dcm'
-        # print('filepath',file_path)
-        # if does not exist create the file
+        # if does not exist, creates the file
         with open(file_path, 'wb') as file:
             file.write(part)
             file.close()

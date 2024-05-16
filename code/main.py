@@ -67,7 +67,6 @@ def history():
 
         # Get the results from the form
         time = request.form.get('searchStudyDate')
-        print(time)
         # Add the study name and results to the database
         if time:
             composition = client.searchByDate(time)
@@ -88,10 +87,10 @@ def history():
                            actions=actions)
 
 
-@app.route("/download/<jsone>", methods=["POST", "GET"])
-def download(jsone):
+@app.route("/download/<json>", methods=["POST", "GET"])
+def download(json):
     # make json file from text argument
-    json_string = json.dumps(jsone)
+    json_string = json.dumps(json)
     with open('jsonResult.json', 'w') as json_file:
         json_file.write(json_string)
 
@@ -135,35 +134,31 @@ def perform_nifti_conversionDTI():
 def display_nifti_infos():
     global study_name
     try:
-        study_name = session['study_name']
-        out_files = os.listdir('data/NIFTII')
-        if len(out_files) == 0:
-            convert_DICOM_to_NIfTI("uploads", False)
-
         nifti_files = []
-        for study in os.listdir("data/NIFTII"):
-            for file in os.listdir("data/NIFTII/" + study):
-                if file.endswith('.nii.gz'):
-                    nifti_file = os.path.join("data/NIFTII/" + study, file)
-                    img = nib.load(nifti_file)
-                    data = img.get_fdata()
-                    header = img.header
-                    affine = img.affine
-                    shape = data.shape
-                    dtype = data.dtype
-                    filename = os.path.basename(nifti_file)
-                    nifti_info = {
-                        'filename': str(filename),
-                        'shape': str(shape),
-                        'dtype': str(dtype),
-                        'zooms': str(header.get_zooms()),
-                        'affine': affine.tolist()
-                    }
-                    nifti_files.append(nifti_info)
-                    nifti_info_json = json.dumps(nifti_info)
-                    client.addStudyResult(study_name, nifti_info_json, 'Display NIFTII information')
+        inst, paths = look_for_nifti_instances()
+        paths = paths.values()
+        for path in paths:
+            nifti_file = path
+            img = nib.load(nifti_file)
+            data = img.get_fdata()
+            header = img.header
+            affine = img.affine
+            shape = data.shape
+            dtype = data.dtype
+            filename = os.path.basename(nifti_file)
+            nifti_info = {
+                'filename': str(filename),
+                'shape': str(shape),
+                'dtype': str(dtype),
+                'zooms': str(header.get_zooms()),
+                'affine': affine.tolist()
+            }
+            nifti_files.append(nifti_info)
+            nifti_info_json = json.dumps(nifti_info)
+            client.addStudyResult(study_name, nifti_info_json, 'Display NIFTII information')
     except Exception as e:
-        flash('Error during displaying information. Are you sure your files are the correct format (nii).',
+        print(e)
+        flash('Error during displaying information. Are you sure your files are the correct format (nii) ?',
               'error')
         return render_template('index.html', study=study_name)
     return render_template('display.html', nifti_files=nifti_files)
@@ -217,6 +212,7 @@ def getSeries():
 series = ''
 orthanc = False
 
+
 @app.route('/download_dicom', methods=['POST'])
 def download_dicom():
     global series
@@ -244,22 +240,29 @@ instances_glob = []
 def show_dicom():
     global study, series, instances_glob
     if request.method == 'POST':
-        instance = request.form.get("dicomSelector")
-        if orthanc:
-            pngImage = dicomClient.getRenderedInstance(study, series, instance, False)
-            infos = {"study": study, "series": series, "instance": instance}
-            info_json = json.dumps(infos)
-            client.addStudyResult(study_name, info_json, 'Display DICOM image')
-            with open('static/image.png', 'wb') as f:
-                f.write(pngImage)
-        else:
-            d = os.listdir('data/UNZIP')
-            pixel_data = pydicom.dcmread('data/UNZIP/' + d[0] + '/' + instance).pixel_array
-            plt.imshow(pixel_data, cmap=plt.cm.bone)
-            plt.axis('off')
-            plt.savefig('static/image.png', bbox_inches='tight', pad_inches=0)
-            plt.close()
-        return render_template('show_dicom.html', lists=instances_glob, i = instance)
+        try:
+            instance = request.form.get("dicomSelector")
+            if orthanc:
+                pngImage = dicomClient.getRenderedInstance(study, series, instance, False)
+                infos = {"study": study, "series": series, "instance": instance}
+                info_json = json.dumps(infos)
+                client.addStudyResult(study_name, info_json, 'Display DICOM image')
+                with open('static/image.png', 'wb') as f:
+                    f.write(pngImage)
+            else:
+                d = os.listdir('data/UNZIP')
+                if os.path.isdir('data/UNZIP/' + d[0]):
+                    pixel_data = pydicom.dcmread('data/UNZIP/' + d[0] + '/' + instance).pixel_array
+                else:
+                    pixel_data = pydicom.dcmread('data/UNZIP/' + instance).pixel_array
+                plt.imshow(pixel_data, cmap=plt.cm.bone)
+                plt.axis('off')
+                plt.savefig('static/image.png', bbox_inches='tight', pad_inches=0)
+                plt.close()
+        except Exception as e:
+            print(e)
+            flash('Error during displaying DICOM file', 'error')
+        return render_template('show_dicom.html', lists=instances_glob, i=instance)
     else:
         if study != '' or series != '':
             try:
@@ -281,23 +284,22 @@ def show_dicom():
 @app.route('/show_nifti', methods=['GET', 'POST'])
 def show_nifti():
     niftis, paths = look_for_nifti_instances()
-    if request.method == 'GET':
-
-        if len(niftis) == 0:
-            flash("There isn't any NIFTI file selected. Please upload a NIFTI file and retry.", 'error')
-            return render_template('index.html')
-        try:
-            instance = request.form.get("niftiSelector")
-            p = paths[instance]
-            pngImage = plotting.plot_img(nib.load(p))
-            pngImage.savefig('static/image_nifti.png')
-            nifti_info = {"nifti": instance, "path": p}
-            nifti_info_json = json.dumps(nifti_info)
-            client.addStudyResult(study_name, nifti_info_json, 'Display NIFTII image')
-        except Exception as e:
-            flash("There isn't any NIFTI file selected. Please select a NIFTI file and retry.", 'error')
+    if len(niftis) == 0:
+        flash("There isn't any NIFTI file selected. Please upload a NIFTI file and retry.", 'error')
+        return render_template('index.html')
+    try:
+        instance = request.form.get("niftiSelector")
+        p = paths[instance]
+        pngImage = plotting.plot_img(nib.load(p))
+        pngImage.savefig('static/image_nifti.png')
+        nifti_info = {"nifti": instance, "path": p}
+        nifti_info_json = json.dumps(nifti_info)
+        client.addStudyResult(study_name, nifti_info_json, 'Display NIFTII image')
+    except Exception as e:
+        flash("There was an error during the display of your NIFTII files. Either the files are too heavy or you "
+              "didn't upload any files.", 'error')
     return render_template('show_nifti.html', lists=niftis)
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)
