@@ -35,11 +35,11 @@ def home():
         clear_uploads_directory()
         clear_uploads_directory('data/NIFTII')
         clear_uploads_directory('data/UNZIP')
-        session['study_name'] = request.form.get('studyName')  # Get study name
+        study_name = request.form.get('studyName')  # Get study name
         file = request.files['file']  # Get uploaded file
 
         # If file is present and valid, save it temporarily and set the message
-        if file and session['study_name']:
+        if file and study_name:
             name = file.filename
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(file_path)
@@ -49,7 +49,7 @@ def home():
         elif not file:
             flash("Please provide a file and retry.")
         flash("File uploaded successfully.")
-    return render_template('index.html', file=name)
+    return render_template('index.html', file=study_name)
 
 
 @app.route("/history", methods=["POST", "GET"])
@@ -87,10 +87,10 @@ def history():
                            actions=actions)
 
 
-@app.route("/download/<json>", methods=["POST", "GET"])
-def download(json):
+@app.route("/download/<jsone>", methods=["POST", "GET"])
+def download(jsone):
     # make json file from text argument
-    json_string = json.dumps(json)
+    json_string = json.dumps(jsone)
     with open('jsonResult.json', 'w') as json_file:
         json_file.write(json_string)
 
@@ -105,6 +105,7 @@ def showjson(data):
 
 @app.route('/nifti_conversion', methods=['GET'])
 def perform_nifti_conversion():
+    global study_name
     try:
         convert_DICOM_to_NIfTI("uploads", False)
         i = look_for_nifti_instances()
@@ -119,6 +120,7 @@ def perform_nifti_conversion():
 
 @app.route('/nifti_conversionDTI', methods=['GET'])
 def perform_nifti_conversionDTI():
+    global name,study_name
     try:
         if len(os.listdir('data/NIFTII' + name)) == 0:
             convert_DICOM_to_NIfTI("uploads", True)
@@ -127,7 +129,7 @@ def perform_nifti_conversionDTI():
             flash('Successful conversion')
     except Exception as e:
         flash('Error during conversion. Please verify the content of your files.', 'error')
-    return render_template('displayflash.html', file=name)
+    return render_template('displayflash.html', file=study_name)
 
 
 @app.route('/display_info')
@@ -166,7 +168,7 @@ def display_nifti_infos():
 
 @app.route('/DICOMweb', methods=['GET', 'POST'])
 def getDICOMfromWeb():
-    global study_name, name
+    global study_name
     return render_template('dicomweb_form.html', study=study_name)
 
 
@@ -175,6 +177,7 @@ studies_uids = {}
 
 @app.route('/search_studies', methods=['POST'])
 def search_studies():
+    global study_name
     if request.method == 'POST':
         patient_id = request.form.get('patientID')
         patient_name = request.form.get('patientName')
@@ -202,10 +205,10 @@ def getSeries():
         study = study_instance_uid
         search_results = lookup_series(study_instance_uid)
         results = []
-        for series in search_results:
-            text = series['modality'] + ' - ' + series['series-description']
+        for serie in search_results:
+            text = serie['modality'] + ' - ' + serie['series-description']
             results.append(text)
-            instances[text] = series['series-instance-uid']
+            instances[text] = serie['series-instance-uid']
         return render_template('dicomweb_form.html', series=results, study=study_name)
 
 
@@ -215,7 +218,7 @@ orthanc = False
 
 @app.route('/download_dicom', methods=['POST'])
 def download_dicom():
-    global series
+    global series, orthanc, study_name
     if request.method == 'POST':
         clear_uploads_directory()
         clear_uploads_directory('data/NIFTII')
@@ -225,6 +228,7 @@ def download_dicom():
         series = series_instance_uid
         d = dicomClient.downloadInstancesOfSeries(study, series_instance_uid)
         save_dicom_files(d, 'uploads')
+        save_dicom_files(d, 'data/UNZIP')
         flash('DICOM files downloaded successfully', 'success')
         infos = {"study": study, "series": series}
         info_json = json.dumps(infos)
@@ -238,7 +242,7 @@ instances_glob = []
 
 @app.route('/show_dicom', methods=['GET', 'POST'])
 def show_dicom():
-    global study, series, instances_glob
+    global study, series, instances_glob, study_name
     if request.method == 'POST':
         try:
             instance = request.form.get("dicomSelector")
@@ -296,8 +300,7 @@ def show_nifti():
         nifti_info_json = json.dumps(nifti_info)
         client.addStudyResult(study_name, nifti_info_json, 'Display NIFTII image')
     except Exception as e:
-        flash("There was an error during the display of your NIFTII files. Either the files are too heavy or you "
-              "didn't upload any files.", 'error')
+        print(e)
     return render_template('show_nifti.html', lists=niftis)
 
 
