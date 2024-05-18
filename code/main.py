@@ -108,7 +108,7 @@ def perform_nifti_conversion():
     global study_name
     try:
         convert_DICOM_to_NIfTI("uploads", False)
-        i = look_for_nifti_instances()
+        i, j = look_for_nifti_instances()
         if len(i) == 0:
             flash('Error during conversion. Please verify the content of your files.', 'error')
         else:
@@ -138,6 +138,9 @@ def display_nifti_infos():
     try:
         nifti_files = []
         inst, paths = look_for_nifti_instances()
+        if len(inst) == 0:
+            flash('No NIFTI files found. Please convert your files first.', 'error')
+            return render_template('index.html', study=study_name)
         paths = paths.values()
         for path in paths:
             nifti_file = path
@@ -268,19 +271,23 @@ def show_dicom():
             flash('Error during displaying DICOM file', 'error')
         return render_template('show_dicom.html', lists=instances_glob, i=instance)
     else:
-        if study != '' or series != '':
-            try:
-                instances_glob = dicomClient.listInstances(study, series)
+        try :
+            if study != '' or series != '':
+                try:
+                    instances_glob = dicomClient.listInstances(study, series)
+                    return render_template('show_dicom.html', lists=instances_glob)
+                except Exception as e:
+                    print("Error:", e)  # Print the error for debugging
+                    return Response("Internal Server Error", status=500)
+            elif len(os.listdir('data/UNZIP')) > 0:
+                d = os.listdir('data/UNZIP')
+                inst = os.listdir('data/UNZIP/' + d[0])
+                instances_glob = [file for file in inst if file.endswith('.dcm')]
                 return render_template('show_dicom.html', lists=instances_glob)
-            except Exception as e:
-                print("Error:", e)  # Print the error for debugging
-                return Response("Internal Server Error", status=500)
-        elif len(os.listdir('data/UNZIP')) > 0:
-            d = os.listdir('data/UNZIP')
-            inst = os.listdir('data/UNZIP/' + d[0])
-            instances_glob = [file for file in inst if file.endswith('.dcm')]
-            return render_template('show_dicom.html', lists=instances_glob)
-        else:
+            else:
+                flash('You didn\'t download any DICOM file. Please select or upload DICOM files and retry.', 'error')
+                return render_template('index.html')
+        except Exception as e:
             flash('You didn\'t download any DICOM file. Please select or upload DICOM files and retry.', 'error')
             return render_template('index.html')
 
