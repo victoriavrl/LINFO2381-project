@@ -42,7 +42,7 @@ The left side of the interface enables the submission of DICOM files. Either via
 
 The right side is where you find the drop-down menu that list the actions. For every action needing a DICOM file, be sure to have submitted a DICOM file, and for the ones needing nifti files, you should have performed a conversion DICOM to nifti. 
 
-On the top-left, you will find a tab "History" where your files can be retrieved either by date or name. They come with a JSON file that is downloadable. 
+On the top-left, you will find a tab "History" where your files can be retrieved either by date or name. They come with a JSON file that is downloadable or just displayed on the screen at your convenience. 
 
 ## Implement a new feature
 
