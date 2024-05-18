@@ -6,6 +6,7 @@ License: MIT License
 
 This project was developed under the scope of the LINFO2381-Health Informatics course at Université Catholique de Louvain. Its goal is to create a simple and clear web interface where the user can upload DICOM files from his computer or Orthanc. Several actions can then be performed like a conversion from DICOM to Nifti, display of DICOM or Nifti files, or basic information about Nifti files. All those actions are performed via Python. The conversion uses the tool dicom2nifti. An history of actions performes is stored via CouchDB. 
 
+Video demonstration : https://www.youtube.com/watch?v=C0JC_Z-WO0s
 
 ## Launch
 
@@ -24,7 +25,6 @@ Then you need write two command lines in your terminal:
 
 ### Lauch Orthanc localhost
 
-info: https://orthanc.uclouvain.be/book/users/docker.html#docker
   
 For Windows, launch Docker Desktop
 
