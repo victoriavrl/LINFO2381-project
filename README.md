@@ -4,12 +4,14 @@ License: MIT License
 
 ## Description
 
-This project was developed under the scope of the LINFO2381-Health Informatics course at Université Catholique de Louvain. Its goal is to create a simple and clear web interface where the user can upload DICOM files from his computer or Orthanc. Several actions can then be performed like a conversion from DICOM to Nifti, display of DICOM or Nifti files, or basic information about Nifti files. All those actions are performed via Python. The conversion uses the tool dicom2nifti A history of files stored is kept via CouchDB. 
+This project was developed under the scope of the LINFO2381-Health Informatics course at Université Catholique de Louvain. Its goal is to create a simple and clear web interface where the user can upload DICOM files from his computer or Orthanc. Several actions can then be performed like a conversion from DICOM to Nifti, display of DICOM or Nifti files, or basic information about Nifti files. All those actions are performed via Python. The conversion uses the tool dicom2nifti. An history of actions performes is stored via CouchDB. 
 
 
 ## Launch
 
-First, check that you have a recent version of Python. Make sure to install every package listed in requirements.txt found in this project. You can install them all via this terminal command: pip install -r requirements.txt. 
+First, check that you have a recent version of Python. Make sure to install every package listed in requirements.txt found in this project. You can install them all via this terminal command: 
+
+	pip install -r requirements.txt
 
 To use Orthanc and CouchDB, you need Docker installed. And Docker Studio for Windows. Please find infos on https://www.docker.com/get-started/
 
@@ -46,15 +48,15 @@ On the top-left, you will find a tab "History" where your files can be retrieved
 
 To implement a new feature to the Web Interface, 3 steps have to be followed:
 
-### 1: create your script(s)
+### 1. create your script(s)
 
 Your new feature algorithm must be written in Python and applied on either DICOM or Niftii files. You must put your script(s) in the folder code of the project
 
-## 2: add an option in the drop-down menu
+### 2. add an option in the drop-down menu
 
 This can be done in the index.html file found in the code/templates path. 
 
-## 3: add a route in Flask
+### 3. add a route in Flask
 
 You must then add a function in the main.py, that will call your script. You could ignore step 1 and code directly in main.py but we do not recommend this for not small features. For the interface, you need to add a route with a @app.route just above. It should have the name you choose in index.html and do not forget to precise the Flask method. 
 
