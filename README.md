@@ -61,16 +61,3 @@ You must then add a function in the main.py, that will call your script. You cou
 ## Important note
 
 If your new feature uses data from the app, there are three folders to know: the folder code/uploads will contain raw data of what is uploaded so DICOM data under the form of a zip file or directly the slices (if uploaded from Orthanc). The folder code/data/unzip will contain potential unzip DICOM files and code/data/nifti, the nifti files after conversion. 
-
-## Launch Database in CouchDB
-  For Windows, launch Docker Desktop
-  
-    docker run --rm -t -i -p 5984:5984 -e COUCHDB_USER=admin -e COUCHDB_PASSWORD=password couchdb:3.3.3
-
-## Lauch Orthanc localhost
-
-info : https://orthanc.uclouvain.be/book/users/docker.html#docker
-  
-For Windows, launch Docker Desktop
-
-    docker run --rm -t -i -p 8042:8042 -p 4242:4242 jodogne/orthanc-plugins:1.12.3
