@@ -58,8 +58,8 @@ This can be done in the index.html file found in the code/templates path.
 
 ### 3. add a route in Flask
 
-You must then add a function in the main.py, that will call your script. You could ignore step 1 and code directly in main.py but we do not recommend this for not small features. For the interface, you need to add a route with a @app.route just above. It should have the name you choose in index.html and do not forget to precise the Flask method. 
+You must then add a function in the main.py, that will call your script. You could ignore step 1 and code directly in main.py but we do not recommend this for not small features. For the interface, you need to add a route with a @app.route just above. As argument of the @app.route, use the name you choose in index.html and the Flask method. 
 
-## Important note
+### Important note
 
 If your new feature uses data from the app, there are three folders to know: the folder code/uploads will contain raw data of what is uploaded so DICOM data under the form of a zip file or directly the slices (if uploaded from Orthanc). The folder code/data/unzip will contain potential unzip DICOM files and code/data/nifti, the nifti files after conversion. 
