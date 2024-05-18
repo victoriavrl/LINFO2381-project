@@ -1,4 +1,4 @@
-# LINFO2381-project: Interactive DICOM processing ===
+# LINFO2381-project: Interactive DICOM processing
 Contributors: Alexandra Onciul (54212000), Delphine van Rossum (81352000), Quentin Dujardin (63292000), Victoria Van Rillaer (09362000)
 License: MIT License
 
